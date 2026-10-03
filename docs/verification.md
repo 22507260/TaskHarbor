@@ -73,3 +73,13 @@ The checked-in CI workflow targets Windows and Linux. Its remote execution statu
 
 ![Execution graph and selected step](images/execution-map.jpg)
 ![Failed step on mobile](images/execution-map-mobile.jpg)
+
+## v0.1.7 revision comparison verification
+
+- Forty-four tests include addition/removal/modification classification, metadata, snapshot immutability, key-order equivalence, dependency-order changes, sequence-only changes, missing/null/false/zero values, dotted field keys, identity rename, reverse comparison and identical definitions.
+- Browser: compared Customer onboarding v1 → v2 and inspected description changes plus the added welcomeChannel transform field.
+- Swap reversed before/after values. Selecting v2 → v2 showed identical definitions with zero changes.
+- At 390px, document width was 375px with no horizontal overflow; field values stack vertically. Screenshots use existing synthetic workflow revisions.
+
+![Definition comparison](images/revision-comparison.jpg)
+![Mobile comparison](images/revision-comparison-mobile.jpg)

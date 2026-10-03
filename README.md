@@ -2,7 +2,7 @@
 
 A local-first workflow operations platform: compose dependency graphs, run background jobs and inspect every attempt from a usable web console.
 
-TaskHarbor is an evolving full-stack engineering project. Version 0.1.6 provides a working execution engine and UI; the roadmap grows it toward a multi-user, PostgreSQL-backed service.
+TaskHarbor is an evolving full-stack engineering project. Version 0.1.7 provides a working execution engine and UI; the roadmap grows it toward a multi-user, PostgreSQL-backed service.
 
 ![Workflow console](docs/images/operations-console.jpg)
 
@@ -136,3 +136,11 @@ Open a run to see its snapshotted dependency graph with live job states and atte
 Node labels, icons and status text complement color. Buttons support keyboard activation; Escape closes the inspector and focus stays inside it while open. Large graphs scroll within the panel. This is an execution view, not a graph editor.
 
 ![Interactive execution map](docs/images/execution-map.jpg)
+
+## Compare workflow revisions
+
+Open a workflow with at least two saved revisions. **Version history → Compare definitions** defaults to the latest two. Select any recorded versions, or use **Swap** to reverse the comparison. Added/removed steps are matched by step ID; changing an ID appears as removal plus addition. Modified steps show only changed fields with explicit before/after values. Missing fields display **Not set**, distinct from JSON null.
+
+Object key order does not count as a change. Dependency array order does, because it controls merge precedence; step sequence changes are shown separately. This is a read-only definition comparison and does not restore revisions, change jobs or compare execution outputs.
+
+![Workflow revision comparison](docs/images/revision-comparison.jpg)

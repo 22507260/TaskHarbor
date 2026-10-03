@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.7
+
+- Compare any two saved workflow definitions with reversible version selection.
+- Show added, removed and modified steps, workflow metadata and step sequence changes.
+- Render field-level before/after values with explicit missing/null distinction.
+- Ignore object key order while preserving dependency order semantics.
+- Cancel revision-history requests on dismissal and add four comparison tests.
+
 ## 0.1.6
 
 - Add an interactive live dependency map to the run inspector.
