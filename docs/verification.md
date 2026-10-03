@@ -40,3 +40,15 @@ The checked-in CI workflow targets Windows and Linux. Its remote execution statu
 - Screenshot uses synthetic local verification data.
 
 ![Successful latest-version rerun](images/rerun-inspector.jpg)
+
+## v0.1.4 console verification
+
+- Browser checked at 1440×1100 and 390×844 with live local API records.
+- At 390px, document scroll width was 375px (scrollbar excluded), with no horizontal document overflow.
+- Workflow search displayed the new no-results state; clearing restored cards.
+- Opened and closed workflow creation on mobile, navigated to execution history and returned to workflows.
+- Engine counts matched the current workspace: five workflows, zero active runs and one online worker.
+- Desktop and mobile screenshots use existing synthetic verification records.
+
+![Modern desktop console](images/operations-console.jpg)
+![Mobile console](images/operations-mobile.jpg)

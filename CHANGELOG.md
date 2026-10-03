@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.4
+
+- Refresh the console with a live engine overview, stronger typography and layered surfaces.
+- Highlight actual dependency maps and graph counts on workflow cards.
+- Keep card accents stable across search results and add a clear no-results state.
+- Improve responsive layout, navigation labels, keyboard focus and reduced-motion support.
+
 ## 0.1.3
 
 - Rerun terminal executions with edited JSON input and source/latest workflow selection.

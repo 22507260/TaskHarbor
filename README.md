@@ -2,9 +2,9 @@
 
 A local-first workflow operations platform: compose dependency graphs, run background jobs and inspect every attempt from a usable web console.
 
-TaskHarbor is an evolving full-stack engineering project. Version 0.1.3 provides a working execution engine and UI; the roadmap grows it toward a multi-user, PostgreSQL-backed service.
+TaskHarbor is an evolving full-stack engineering project. Version 0.1.4 provides a working execution engine and UI; the roadmap grows it toward a multi-user, PostgreSQL-backed service.
 
-![Workflow console](docs/images/workflows.jpg)
+![Workflow console](docs/images/operations-console.jpg)
 
 ## Run locally
 
@@ -114,3 +114,7 @@ Open a completed, failed or cancelled run and choose **Rerun with edited input**
 Repeated submission of the same request creates one execution, including concurrent API processes. This deduplicates run creation, not task side effects. See [the rerun decision](docs/adr/0004-rerun-requests.md).
 
 ![Rerun execution](docs/images/rerun-inspector.jpg)
+
+## Console design
+
+The workspace overview displays live workflow, active-run and online-worker counts from the local API. Workflow cards show their actual dependency graph, entry-step count and connection count. Stable identity-based accents stay consistent while searching. Responsive cards and an icon navigation rail keep the console usable on smaller screens; focus indicators and reduced-motion preferences are supported.
