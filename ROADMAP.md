@@ -11,7 +11,7 @@ Delivered: workflow creation, DAG validation, durable jobs, leased workers, retr
 - Delivered in v0.1.1: extracted client API/types, dialog, builder and revision history. Delivered in v0.1.3: extracted run inspector. Next: share validated contracts with the backend.
 - Delivered in v0.1.1: edit and version workflows without changing historical runs, with conflict detection and revision inspection. Delivered in v0.1.7: field-level comparison of any two revisions.
 - Delivered in v0.1.5: versioned workflow import/export with validation and preview. Delivered in v0.1.6: live execution graphs with selected-step output and event inspection. Next: visual graph authoring.
-- Delivered in v0.1.2: run search, status/workflow filters, anchored pagination and global dashboard metrics. Delivered in v0.1.3: rerun with edited input and source/latest definition selection. Next: paginate/filter events.
+- Delivered in v0.1.2: run search, status/workflow filters, anchored pagination and global dashboard metrics. Delivered in v0.1.3: rerun with edited input and source/latest definition selection. Delivered in v0.1.8: client-side event search/group filters and progressive rendering. Next: server-side event pagination.
 - Browser automation in CI; keyboard and screen-reader review of the full console.
 - Deliverable: create, revise and troubleshoot an onboarding workflow entirely from the UI.
 

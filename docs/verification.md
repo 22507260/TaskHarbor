@@ -83,3 +83,14 @@ The checked-in CI workflow targets Windows and Linux. Its remote execution statu
 
 ![Definition comparison](images/revision-comparison.jpg)
 ![Mobile comparison](images/revision-comparison-mobile.jpg)
+
+## v0.1.8 event investigation verification
+
+- Forty-eight tests include combined categories/step selection, literal Unicode search across messages/types/IDs, append-ID ordering with timestamp ties, immutable filtering, new event arrivals and severity classification.
+- Browser: opened the existing Resilient delivery execution, selected Retries and Newest first, and observed its 2000ms retry before its 1000ms retry.
+- Search 2000ms returned one of twelve events; unmatched text displayed a clear no-results state. Selecting deliver combined correctly with retry filters; clearing restored all twelve records and removed step selection.
+- Mobile 390px: searching job.retry returned two events; document width stayed at 375px with no horizontal overflow. Viewport was reset after verification.
+- Progressive rendering beyond 50 records was implemented but not exercised in this browser fixture, which has twelve events. Event filtering remains client-side.
+
+![Retry event filters](images/event-filters.jpg)
+![Mobile event search](images/event-filters-mobile.jpg)

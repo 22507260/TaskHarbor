@@ -2,7 +2,7 @@
 
 A local-first workflow operations platform: compose dependency graphs, run background jobs and inspect every attempt from a usable web console.
 
-TaskHarbor is an evolving full-stack engineering project. Version 0.1.7 provides a working execution engine and UI; the roadmap grows it toward a multi-user, PostgreSQL-backed service.
+TaskHarbor is an evolving full-stack engineering project. Version 0.1.8 provides a working execution engine and UI; the roadmap grows it toward a multi-user, PostgreSQL-backed service.
 
 ![Workflow console](docs/images/operations-console.jpg)
 
@@ -144,3 +144,13 @@ Open a workflow with at least two saved revisions. **Version history → Compare
 Object key order does not count as a change. Dependency array order does, because it controls merge precedence; step sequence changes are shown separately. This is a read-only definition comparison and does not restore revisions, change jobs or compare execution outputs.
 
 ![Workflow revision comparison](docs/images/revision-comparison.jpg)
+
+## Investigate execution events
+
+The inspector's **Event trail** searches literal text across messages, event types and step IDs, with Unicode normalization and case-insensitive matching. Combine search with **Errors**, **Retries** or **Worker recovery**, and a selected graph step. Matching and recorded counts stay visible; **Clear event filters** clears search, group and step selection while retaining the chosen order.
+
+Choose oldest/newest first; ordering uses append-only event IDs, including timestamp ties. Error labels represent terminal job/run failures. Retries, recovery, skips and cancellation are warnings; they do not necessarily mean a failed run. Records have explicit labels as well as color.
+
+Fifty matching events are rendered initially; **Show 50 more** expands the visible list. This is client-side filtering and progressive rendering of the already-loaded run detail, not server-side event pagination. Filters remain while that inspector stays open and reset when another run is opened.
+
+![Filtered retry event trail](docs/images/event-filters.jpg)

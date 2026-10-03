@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.8
+
+- Search execution events by message, type or step identity with Unicode normalization.
+- Combine error/retry/recovery groups with graph step selection.
+- Reverse event ordering and display matching/recorded counts and no-results states.
+- Label event severity and progressively render matching events in batches of 50.
+- Extract EventTrail and cover filtering, ordering, live additions and severity classification.
+
 ## 0.1.7
 
 - Compare any two saved workflow definitions with reversible version selection.
