@@ -2,6 +2,7 @@ import { Check, Circle, RefreshCw, Square, X } from 'lucide-react';
 import type { Run } from '../types';
 import { useEffect, useRef, useState } from 'react';
 import ExecutionGraph from './ExecutionGraph';
+import EventTrail from './EventTrail';
 const short = (id: string) => id.slice(0, 8);
 const date = (time: number) =>
   new Date(time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
@@ -39,7 +40,7 @@ export default function RunInspector({
       if (event.key !== 'Tab') return;
       const elements = [
         ...(panel.current?.querySelectorAll<HTMLElement>(
-          'button:not(:disabled),[tabindex="0"],summary,textarea,input:not(:disabled)',
+          'button:not(:disabled),[tabindex="0"],summary,textarea,input:not(:disabled),select:not(:disabled)',
         ) ?? []),
       ].filter((element) => element.getClientRects().length);
       const first = elements[0],
@@ -62,9 +63,6 @@ export default function RunInspector({
     };
   }, []);
   const selectedJob = run.jobs.find((job) => job.step_id === selected);
-  const visibleEvents = selected
-    ? run.events.filter((event) => event.step_id === selected)
-    : run.events;
   return (
     <div className="drawer-backdrop" onClick={() => close()}>
       <aside
@@ -195,28 +193,7 @@ export default function RunInspector({
             </div>
           ))}
         </div>
-        <h3 className="subheading">
-          Event trail{' '}
-          <span>
-            {visibleEvents.length}
-            {selected ? ' · selected step' : ''}
-          </span>
-        </h3>
-        <div className="event-trail">
-          {!visibleEvents.length && <p className="muted">No events recorded for this step yet.</p>}
-          {visibleEvents.map((e) => (
-            <div className="event" key={e.id}>
-              <i />
-              <div>
-                <span>{e.message}</span>
-                <small>
-                  {e.step_id || 'workflow'} · {e.type}
-                </small>
-              </div>
-              <time>{date(e.created_at)}</time>
-            </div>
-          ))}
-        </div>
+        <EventTrail events={run.events} step={selected} clearStep={() => setSelected(null)} />
         <h3 className="subheading">Payloads</h3>
         <details>
           <summary>Run input</summary>
