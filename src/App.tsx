@@ -141,7 +141,7 @@ function App() {
           <span className="brand-icon">
             <Anchor size={23} />
           </span>
-          TaskHarbor<span className="version">v0.1.3</span>
+          TaskHarbor<span className="version">v0.1.4</span>
         </a>
         <div className="workspace">
           <span className="avatar">P</span>
@@ -161,6 +161,8 @@ function App() {
             return (
               <button
                 key={String(label)}
+                aria-label={String(label)}
+                aria-current={tab === label ? 'page' : undefined}
                 className={tab === label ? 'nav-item chosen' : 'nav-item'}
                 onClick={() => {
                   setTab(String(label));
@@ -238,7 +240,59 @@ function App() {
               </button>
             </div>
           )}
-          <section className="metrics">
+          {tab === 'Workflows' && (
+            <section className="operations-hero" aria-label="Workspace overview">
+              <div className="hero-copy">
+                <span className="hero-kicker">
+                  <i className={connected ? 'online-dot' : 'offline-dot'} />{' '}
+                  {connected ? 'CONNECTED TO YOUR ENGINE' : 'WAITING FOR YOUR ENGINE'}
+                </span>
+                <h2>
+                  Build the flow.
+                  <br />
+                  <span>Keep work moving.</span>
+                </h2>
+                <p>
+                  A clear path from your first step to the final result. Design, execute and trace
+                  your workflows in one place.
+                </p>
+                <button className="hero-link" onClick={() => setTab('Runs')}>
+                  Explore execution history <ArrowUpRight size={16} />
+                </button>
+              </div>
+              <div
+                className="engine-map"
+                aria-label={`${workflows.length} workflows, ${overview.active} active runs, ${workers.filter((w) => w.online).length} online workers`}
+              >
+                <div className="map-label">
+                  YOUR EXECUTION ENGINE <span>LIVE STATE</span>
+                </div>
+                <div className="map-track">
+                  <div className="map-node">
+                    <FlowIcon size={22} />
+                    <strong>{workflows.length}</strong>
+                    <small>Workflows</small>
+                  </div>
+                  <span className="map-wire" />
+                  <div className="map-node core">
+                    <Zap size={22} />
+                    <strong>{overview.active}</strong>
+                    <small>Active runs</small>
+                  </div>
+                  <span className="map-wire" />
+                  <div className="map-node">
+                    <Server size={22} />
+                    <strong>{workers.filter((w) => w.online).length}</strong>
+                    <small>Workers online</small>
+                  </div>
+                </div>
+                <div className="map-caption">
+                  <GitBranch size={14} /> Definitions → durable execution → worker fleet
+                </div>
+              </div>
+            </section>
+          )}
+          <section className="metrics" aria-label="Execution statistics">
             <Metric
               label="Total runs"
               value={String(overview.total)}
@@ -285,12 +339,18 @@ function App() {
               <div className="workflow-grid">
                 {workflows
                   .filter((w) => w.name.toLowerCase().includes(query.toLowerCase()))
-                  .map((w, i) => {
+                  .map((w) => {
                     const latest = overview.latestByWorkflow.find((r) => r.workflow_id === w.id);
                     return (
-                      <article className="workflow-card" key={w.id}>
+                      <article
+                        className={
+                          'workflow-card accent-' +
+                          (Array.from(w.id).reduce((n, c) => n + c.charCodeAt(0), 0) % 3)
+                        }
+                        key={w.id}
+                      >
                         <div className="card-top">
-                          <span className={'flow-icon tone-' + (i % 3)}>
+                          <span className="flow-icon">
                             <FlowIcon size={23} />
                           </span>
                           <span className="tag">
@@ -302,7 +362,14 @@ function App() {
                           <ArrowUpRight size={16} />
                         </button>
                         <p>{w.description}</p>
-                        <MiniGraph steps={w.steps} />
+                        <div className="graph-surface">
+                          <span className="graph-label">DEPENDENCY MAP</span>
+                          <MiniGraph steps={w.steps} />
+                          <span className="graph-detail">
+                            {w.steps.filter((s) => !s.dependsOn.length).length} entry steps ·{' '}
+                            {w.steps.reduce((n, s) => n + s.dependsOn.length, 0)} connections
+                          </span>
+                        </div>
                         <div className="card-footer">
                           <span>{latest ? <Badge status={latest.status} /> : 'Ready to run'}</span>
                           <button
@@ -319,6 +386,16 @@ function App() {
                     );
                   })}
               </div>
+              {!workflows.some((w) => w.name.toLowerCase().includes(query.toLowerCase())) && (
+                <div className="empty workflow-empty">
+                  <Search size={28} />
+                  <h3>No matching workflows</h3>
+                  <p>Try another name or clear your search.</p>
+                  <button className="secondary small" onClick={() => setQuery('')}>
+                    Clear search
+                  </button>
+                </div>
+              )}
               <div className="info-strip">
                 <span>
                   <GitBranch size={18} />
