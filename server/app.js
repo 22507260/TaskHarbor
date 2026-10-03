@@ -26,11 +26,30 @@ export function createApp(store = new Store()) {
     request.log.error(error);
     reply.code(500).send({ error: 'Internal server error' });
   });
-  app.get('/api/health', () => ({ status: 'ok', version: '0.1.0' }));
+  app.get('/api/health', () => ({ status: 'ok', version: '0.1.1' }));
   app.get('/api/workflows', () => store.workflows());
   app.post('/api/workflows', (request, reply) =>
     reply.code(201).send(store.createWorkflow(request.body)),
   );
+  app.get(
+    '/api/workflows/:id',
+    (request, reply) =>
+      store.workflow(request.params.id) ?? reply.code(404).send({ error: 'Workflow not found' }),
+  );
+  app.get(
+    '/api/workflows/:id/revisions',
+    (request, reply) =>
+      store.revisions(request.params.id) ?? reply.code(404).send({ error: 'Workflow not found' }),
+  );
+  app.put('/api/workflows/:id', (request, reply) => {
+    const { expectedVersion } = z
+      .object({ expectedVersion: z.number().int().positive() })
+      .parse(request.body);
+    return (
+      store.updateWorkflow(request.params.id, expectedVersion, request.body) ??
+      reply.code(404).send({ error: 'Workflow not found' })
+    );
+  });
   app.get('/api/runs', () => store.runs());
   app.get(
     '/api/runs/:id',

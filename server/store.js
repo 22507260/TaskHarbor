@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { mkdirSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { workflowSchema, samples } from './definition.js';
+import { migrate } from './migrations.js';
 
 const terminal = new Set(['succeeded', 'failed', 'cancelled']);
 export class Store {
@@ -13,15 +14,13 @@ export class Store {
     if (path !== ':memory:') mkdirSync(dirname(path), { recursive: true });
     this.clock = clock;
     this.db = new DatabaseSync(path, { timeout: 5000 });
-    this.db.exec(`PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON;
-      CREATE TABLE IF NOT EXISTS workflows(id TEXT PRIMARY KEY, definition TEXT NOT NULL, created_at INTEGER NOT NULL);
-      CREATE TABLE IF NOT EXISTS runs(id TEXT PRIMARY KEY, workflow_id TEXT NOT NULL REFERENCES workflows(id), definition TEXT NOT NULL, input TEXT NOT NULL, status TEXT NOT NULL, created_at INTEGER NOT NULL, finished_at INTEGER);
-      CREATE TABLE IF NOT EXISTS jobs(id TEXT PRIMARY KEY, run_id TEXT NOT NULL REFERENCES runs(id), step_id TEXT NOT NULL, status TEXT NOT NULL, attempt INTEGER NOT NULL DEFAULT 0, available_at INTEGER NOT NULL, lease_until INTEGER, token TEXT, worker TEXT, output TEXT, error TEXT, UNIQUE(run_id,step_id));
-      CREATE TABLE IF NOT EXISTS events(id INTEGER PRIMARY KEY AUTOINCREMENT, run_id TEXT NOT NULL REFERENCES runs(id), step_id TEXT, type TEXT NOT NULL, message TEXT NOT NULL, created_at INTEGER NOT NULL);
-      CREATE TABLE IF NOT EXISTS workers(id TEXT PRIMARY KEY, seen_at INTEGER NOT NULL);
-      CREATE INDEX IF NOT EXISTS queue_lookup ON jobs(status, available_at);
-      CREATE INDEX IF NOT EXISTS events_run ON events(run_id,id);
-      PRAGMA user_version=1;`);
+    this.db.exec('PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON;');
+    try {
+      migrate(this.db);
+    } catch (error) {
+      this.db.close();
+      throw error;
+    }
   }
   transaction(fn) {
     this.db.exec('BEGIN IMMEDIATE');
@@ -42,20 +41,66 @@ export class Store {
   createWorkflow(body) {
     const definition = workflowSchema.parse(body),
       id = randomUUID();
-    this.db
-      .prepare('INSERT INTO workflows VALUES(?,?,?)')
-      .run(id, JSON.stringify(definition), this.clock());
-    return { id, ...definition };
+    const insert = () => {
+      const encoded = JSON.stringify(definition),
+        now = this.clock();
+      this.db
+        .prepare('INSERT INTO workflows(id,definition,created_at,version) VALUES(?,?,?,1)')
+        .run(id, encoded, now);
+      this.db.prepare('INSERT INTO workflow_revisions VALUES(?,1,?,?)').run(id, encoded, now);
+      return this.workflow(id);
+    };
+    return this.db.isTransaction ? insert() : this.transaction(insert);
+  }
+  workflow(id) {
+    const row = this.db.prepare('SELECT * FROM workflows WHERE id=?').get(id);
+    return row ? { id: row.id, version: row.version, ...JSON.parse(row.definition) } : null;
   }
   workflows() {
     return this.db
-      .prepare('SELECT * FROM workflows ORDER BY created_at,id')
+      .prepare('SELECT id FROM workflows ORDER BY created_at,rowid')
       .all()
-      .map((x) => ({ id: x.id, ...JSON.parse(x.definition) }));
+      .map((row) => this.workflow(row.id));
+  }
+  revisions(id) {
+    if (!this.workflow(id)) return null;
+    return this.db
+      .prepare('SELECT * FROM workflow_revisions WHERE workflow_id=? ORDER BY version DESC')
+      .all(id)
+      .map((row) => ({
+        version: row.version,
+        created_at: row.created_at,
+        definition: JSON.parse(row.definition),
+      }));
+  }
+  updateWorkflow(id, expectedVersion, body) {
+    const definition = workflowSchema.parse(body),
+      encoded = JSON.stringify(definition);
+    return this.transaction(() => {
+      const row = this.db.prepare('SELECT * FROM workflows WHERE id=?').get(id);
+      if (!row) return null;
+      if (row.version !== expectedVersion) {
+        const error = new Error(
+          `Workflow changed to version ${row.version}. Reload the latest version before saving.`,
+        );
+        error.statusCode = 409;
+        throw error;
+      }
+      if (row.definition === encoded) return this.workflow(id);
+      const version = row.version + 1;
+      this.db
+        .prepare('UPDATE workflows SET definition=?,version=? WHERE id=?')
+        .run(encoded, version, id);
+      this.db
+        .prepare('INSERT INTO workflow_revisions VALUES(?,?,?,?)')
+        .run(id, version, encoded, this.clock());
+      return this.workflow(id);
+    });
   }
   seed() {
-    if (!this.workflows().length)
-      this.transaction(() => samples.forEach((x) => this.createWorkflow(x)));
+    this.transaction(() => {
+      if (!this.workflows().length) samples.forEach((x) => this.createWorkflow(x));
+    });
   }
   start(workflowId, input = {}) {
     return this.transaction(() => {
@@ -65,8 +110,18 @@ export class Store {
         now = this.clock(),
         definition = JSON.parse(workflow.definition);
       this.db
-        .prepare('INSERT INTO runs VALUES(?,?,?,?,?,?,NULL)')
-        .run(id, workflowId, workflow.definition, JSON.stringify(input), 'queued', now);
+        .prepare(
+          'INSERT INTO runs(id,workflow_id,definition,input,status,created_at,workflow_version) VALUES(?,?,?,?,?,?,?)',
+        )
+        .run(
+          id,
+          workflowId,
+          workflow.definition,
+          JSON.stringify(input),
+          'queued',
+          now,
+          workflow.version,
+        );
       for (const step of definition.steps)
         this.db
           .prepare('INSERT INTO jobs(id,run_id,step_id,status,available_at) VALUES(?,?,?,?,?)')
