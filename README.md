@@ -2,7 +2,7 @@
 
 A local-first workflow operations platform: compose dependency graphs, run background jobs and inspect every attempt from a usable web console.
 
-TaskHarbor is an evolving full-stack engineering project. Version 0.1.1 provides a working execution engine and UI; the roadmap grows it toward a multi-user, PostgreSQL-backed service.
+TaskHarbor is an evolving full-stack engineering project. Version 0.1.2 provides a working execution engine and UI; the roadmap grows it toward a multi-user, PostgreSQL-backed service.
 
 ![Workflow console](docs/images/workflows.jpg)
 
@@ -63,6 +63,14 @@ Execution is **at least once**, not exactly once. A process can perform an exter
 
 See [the architecture decision](docs/adr/0001-local-durable-engine.md), [API reference](docs/api.md) and [roadmap](ROADMAP.md).
 
+## Browse execution history
+
+Open **Runs** to search by historical workflow name or run ID, combine status/workflow filters and choose a page size of 5, 10, 25 or 50. **Next** and **Previous** browse older records while keeping an insertion boundary so new arrivals do not shift those pages. **Refresh latest** returns to current records. Statuses continue updating; the boundary does not freeze job state.
+
+The list returns compact summaries and loads inputs/outputs only when a run is opened. Dashboard totals and success rate cover all stored runs. Success rate excludes cancelled and active runs. See [the pagination decision](docs/adr/0003-run-history-pagination.md).
+
+![Filtered execution history](docs/images/run-history.jpg)
+
 ## Quality checks
 
 ```sh
@@ -87,7 +95,7 @@ The database and payloads remain local and are ignored by Git. For SQLite, use a
 
 This release binds to loopback and targets one trusted local user. Authentication, tenant isolation, retention, scheduling, production observability and deployment hardening are future work. The API rejects unrelated browser origins, but that is not a substitute for authentication.
 
-Each worker executes one job at a time. SQLite serializes writes and synchronous database calls can block the Node event loop: this is a deliberate small-scale starting point. Runs are listed newest first with a 100-run limit; the dashboard metrics describe that window. Edits create numbered revisions; stale saves return a conflict and unchanged saves keep the current version. Historical revisions are inspectable; launching or restoring a specific past revision is future work. The UI and API accept any valid DAG. There are no arbitrary-code or shell task types. The checkpoint simulates a failure and the quality-gate sample does not actually scan code.
+Each worker executes one job at a time. SQLite serializes writes and synchronous database calls can block the Node event loop: this is a deliberate small-scale starting point. History provides search, status/workflow filters and anchored cursor pagination; dashboard metrics cover all recorded runs. The legacy `/runs` endpoint still returns the newest 100 full runs for compatibility. Edits create numbered revisions; stale saves return a conflict and unchanged saves keep the current version. Historical revisions are inspectable; launching or restoring a specific past revision is future work. The UI and API accept any valid DAG. There are no arbitrary-code or shell task types. The checkpoint simulates a failure and the quality-gate sample does not actually scan code.
 
 Node's built-in SQLite API is experimental in Node 24. The project pins its supported major version and keeps database access behind `Store` so a later adapter can replace it.
 

@@ -22,3 +22,11 @@ The checked-in CI workflow targets Windows and Linux. Its remote execution statu
 - Browser verification with two simultaneous editor tabs: the first save created revision 2; the second stale save was rejected with a visible conflict while retaining its draft. Explicit reload replaced it with the latest definition.
 - Version history displayed revisions 2 and 1. A subsequent run identified workflow v2 while the old execution remained v1.
 - The migrated local database retained existing workflows, runs and event history.
+
+## v0.1.2 verification
+
+- Twenty-six tests cover history ordering with timestamp ties, page completeness, insertion boundaries, Unicode/literal search, historical workflow names, combined filters, compact summaries, cursor validation, API bounds and global counts beyond 100 runs, alongside the existing execution and revision tests.
+- Created seven synthetic runs in a local History inspection demo workflow: five controlled failures, one cancellation and one successful run after revision. These are verification records, not default seed data or external integrations.
+- Browser: chose five rows per page, navigated to the older second page and inspected its anchored-history indicator.
+- Browser: combined failed status and name search, verified the five matching synthetic failures, and checked the no-results state.
+- Browser: combined workflow and status filters, opened the 390px layout, confirmed no document overflow, and exercised clear filters. The execution table scrolls inside its container.

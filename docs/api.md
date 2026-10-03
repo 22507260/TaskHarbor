@@ -1,4 +1,4 @@
-# API v0.1.1
+# API v0.1.2
 
 Base URL: `http://127.0.0.1:4310/api`. JSON requests and responses. Local trusted-user API; no authentication in this release. Request bodies are limited to 64 KiB. Validation errors return `400`, unknown resources `404`, disallowed browser origins `403`.
 
@@ -65,3 +65,22 @@ Run states: `queued`, `running`, `succeeded`, `failed`, `cancelled`. A run remai
 ```
 
 Each run exposes `workflow_version` alongside its copied definition. Starting a run selects the latest committed version transactionally; editing a workflow never changes an already-created run. Historical revision selection is not supported by the start endpoint.
+
+## Search and paginate run history
+
+`GET /run-history` returns `{items, total, snapshot, nextCursor}`. Each item contains run identity, historical `workflow_name`, version, state, creation/finish timestamps, `step_count` and `completed_steps`. Inputs, task definitions, outputs and events are excluded; load `/runs/:id` for details.
+
+| Parameter    | Behavior                                                                                         |
+| ------------ | ------------------------------------------------------------------------------------------------ |
+| `limit`      | Integer 1–50, default 10                                                                         |
+| `q`          | Literal name/ID substring, trimmed, maximum 100 characters; Unicode NFKC/lowercase normalization |
+| `status`     | `queued`, `running`, `succeeded`, `failed` or `cancelled`                                        |
+| `workflowId` | Exact workflow ID                                                                                |
+| `cursor`     | Opaque continuation from `nextCursor`; use the same filters                                      |
+| `snapshot`   | Optional insertion boundary returned by a prior response; used when revisiting the first page    |
+
+Results sort by `created_at DESC, id DESC`. `total` counts all matches within the insertion boundary, not only the current page. A null `nextCursor` indicates no more records. Invalid bounds, malformed cursors or cursors reused with different filters return HTTP 400. Cursor values are not credentials. No arbitrary page jumps are provided.
+
+Example: `/run-history?limit=5&status=failed&q=delivery`. Continue by adding the returned cursor and keeping the filters. New records are excluded from continuation pages; refreshing without cursor/snapshot starts a live first page. Job states and status-filter membership remain live.
+
+`GET /overview` returns global `total`, `active`, `succeeded`, `completed` and `latestByWorkflow` states. `completed` includes only succeeded and failed runs; use it as the success-rate denominator. This endpoint is independent of history filters and the legacy 100-run window.

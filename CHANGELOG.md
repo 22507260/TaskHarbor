@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.1.2
+
+- Search historical runs by workflow name or ID and combine workflow/status filters.
+- Add compact summary responses and anchored cursor pagination with previous/next navigation.
+- Compute dashboard statistics over all stored runs instead of the latest 100.
+- Fetch full payloads only when opening a run; keep the legacy list API compatible.
+- Add history indexes through schema migration 3 and document cursor semantics.
+- Cancel stale history requests and avoid overlapping polling.
+- Fix duplicate detail requests caused by table button clicks bubbling to their row.
+
 ## 0.1.1
 
 - Edit workflow definitions and create immutable numbered revisions.
