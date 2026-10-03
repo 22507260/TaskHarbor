@@ -7,6 +7,7 @@ import RunHistory from './components/RunHistory';
 import RunTable from './components/RunTable';
 import RerunDialog from './components/RerunDialog';
 import RunInspector from './components/RunInspector';
+import WorkflowImport from './components/WorkflowImport';
 import React, { useEffect, useState } from 'react';
 import {
   Anchor,
@@ -26,6 +27,8 @@ import {
   Workflow as FlowIcon,
   X,
   Zap,
+  Upload,
+  Download,
 } from 'lucide-react';
 
 const date = (time: number) =>
@@ -39,6 +42,30 @@ function Badge({ status }: { status: string }) {
   );
 }
 function App() {
+  const [exportDocument, setExportDocument] = useState<{ text: string; filename: string } | null>(
+    null,
+  );
+  const [importing, setImporting] = useState(false),
+    [exporting, setExporting] = useState(false);
+  async function download(workflow: Workflow) {
+    setExporting(true);
+    try {
+      const document = await api<unknown>('/workflows/' + workflow.id + '/export');
+      setExportDocument({
+        text: JSON.stringify(document, null, 2) + '\n',
+        filename:
+          (workflow.name
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-|-$/g, '') || 'workflow') + '.taskharbor.json',
+      });
+      setSelected(null);
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setExporting(false);
+    }
+  }
   const [workflows, setWorkflows] = useState<Workflow[]>([]),
     [runs, setRuns] = useState<RunSummary[]>([]),
     [workers, setWorkers] = useState<Worker[]>([]);
@@ -141,7 +168,7 @@ function App() {
           <span className="brand-icon">
             <Anchor size={23} />
           </span>
-          TaskHarbor<span className="version">v0.1.4</span>
+          TaskHarbor<span className="version">v0.1.5</span>
         </a>
         <div className="workspace">
           <span className="avatar">P</span>
@@ -214,16 +241,21 @@ function App() {
               </p>
             </div>
             {tab === 'Workflows' && (
-              <button
-                className="primary"
-                onClick={() => {
-                  setError('');
-                  setEditing(null);
-                  setModal(true);
-                }}
-              >
-                <Plus size={17} /> New workflow
-              </button>
+              <div className="heading-actions">
+                <button className="secondary" onClick={() => setImporting(true)}>
+                  <Upload size={16} /> Import
+                </button>
+                <button
+                  className="primary"
+                  onClick={() => {
+                    setError('');
+                    setEditing(null);
+                    setModal(true);
+                  }}
+                >
+                  <Plus size={17} /> New workflow
+                </button>
+              </div>
             )}
           </div>
           {!connected && (
@@ -500,6 +532,13 @@ function App() {
             <Pencil size={15} /> Edit latest version
           </button>
           <RevisionHistory workflowId={selected.id} />
+          <button
+            className="secondary"
+            disabled={exporting}
+            onClick={() => void download(selected)}
+          >
+            <Download size={15} /> {exporting ? 'Exporting…' : 'Export latest JSON'}
+          </button>
         </Dialog>
       )}
       {launch && (
@@ -537,6 +576,54 @@ function App() {
             await refresh();
           }}
         />
+      )}
+      {importing && (
+        <WorkflowImport
+          close={() => setImporting(false)}
+          created={(workflow) => {
+            setImporting(false);
+            setSelected(workflow);
+            void refresh().catch(() => setConnected(false));
+          }}
+        />
+      )}
+      {exportDocument && (
+        <Dialog title="Export workflow" close={() => setExportDocument(null)}>
+          <p className="muted">
+            Latest definition only. Workflow identity, revisions, run inputs and execution history
+            are excluded. Download the file or select the JSON below to copy it.
+          </p>
+          <label className="field">
+            Workflow JSON
+            <textarea
+              readOnly
+              className="code-input"
+              rows={13}
+              value={exportDocument.text}
+              onFocus={(e) => e.target.select()}
+            />
+          </label>
+          <div className="dialog-actions">
+            <button className="secondary" onClick={() => setExportDocument(null)}>
+              Close
+            </button>
+            <button
+              className="primary"
+              onClick={() => {
+                const url = URL.createObjectURL(
+                  new Blob([exportDocument.text], { type: 'application/json' }),
+                );
+                const link = window.document.createElement('a');
+                link.href = url;
+                link.download = exportDocument.filename;
+                link.click();
+                setTimeout(() => URL.revokeObjectURL(url), 1000);
+              }}
+            >
+              <Download size={15} /> Download JSON
+            </button>
+          </div>
+        </Dialog>
       )}
       {run && (
         <RunInspector

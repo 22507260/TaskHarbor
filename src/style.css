@@ -1671,3 +1671,94 @@ td {
     transform: none;
   }
 }
+.heading-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.import-file {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 22px;
+  border: 1px dashed #716095;
+  border-radius: 12px;
+  background: #28213c;
+  font-size: 12px;
+  color: #c8b8f8;
+}
+.import-file span {
+  font-size: 10px;
+  color: var(--muted);
+}
+.import-file input {
+  width: 100%;
+  min-width: 0;
+  font-size: 11px;
+}
+.import-file input::file-selector-button {
+  padding: 8px 12px;
+  background: #b4a0ff;
+  border: 0;
+  border-radius: 6px;
+  margin-right: 10px;
+  cursor: pointer;
+}
+.import-valid {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid #3e6a58;
+  background: #1e372f;
+  border-radius: 8px;
+  padding: 12px;
+  color: #a5e2c7;
+  font-size: 12px;
+}
+.import-step-list {
+  padding: 0;
+  list-style: none;
+  counter-reset: imported;
+}
+.import-step-list li {
+  counter-increment: imported;
+  position: relative;
+  padding: 13px 12px 13px 42px;
+  border-bottom: 1px solid var(--line);
+}
+.import-step-list li::before {
+  content: counter(imported, decimal-leading-zero);
+  position: absolute;
+  left: 6px;
+  color: var(--purple);
+  font: 11px monospace;
+  top: 16px;
+}
+.import-step-list strong {
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.import-step-list code {
+  font-size: 10px;
+  color: #b6a0ff;
+  margin-left: 10px;
+}
+.import-step-list small {
+  display: block;
+  font-size: 10px;
+  color: var(--muted);
+  margin-top: 6px;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 760px) {
+  .page-heading:has(.heading-actions) {
+    flex-direction: column;
+  }
+  .heading-actions {
+    justify-content: flex-start;
+  }
+  .dialog-actions {
+    flex-wrap: wrap;
+  }
+}
