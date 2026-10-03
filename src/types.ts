@@ -1,0 +1,48 @@
+export type Step = {
+  id: string;
+  name: string;
+  type: 'transform' | 'delay' | 'checkpoint';
+  dependsOn: string[];
+  config: { delayMs?: number; failUntilAttempt?: number; fields?: Record<string, unknown> };
+  maxAttempts?: number;
+};
+export type Workflow = {
+  id: string;
+  version: number;
+  name: string;
+  description: string;
+  steps: Step[];
+};
+export type Revision = {
+  version: number;
+  created_at: number;
+  definition: Omit<Workflow, 'id' | 'version'>;
+};
+export type Job = Step & {
+  step_id: string;
+  status: string;
+  attempt: number;
+  output: unknown;
+  error: string | null;
+  worker: string | null;
+  available_at: number;
+};
+export type Run = {
+  id: string;
+  workflow_id: string;
+  workflow_version: number;
+  status: string;
+  created_at: number;
+  finished_at: number | null;
+  definition: Workflow;
+  input: unknown;
+  jobs: Job[];
+  events: {
+    id: number;
+    type: string;
+    message: string;
+    step_id: string | null;
+    created_at: number;
+  }[];
+};
+export type Worker = { id: string; online: boolean; seen_at: number };

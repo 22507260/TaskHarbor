@@ -1,4 +1,9 @@
-import React, { useEffect, useRef, useState } from 'react';
+import { api } from './api';
+import type { Workflow, Run, Worker, Step } from './types';
+import Dialog from './components/Dialog';
+import RevisionHistory from './components/RevisionHistory';
+import Builder from './components/WorkflowBuilder';
+import React, { useEffect, useState } from 'react';
 import {
   Anchor,
   ArrowUpRight,
@@ -10,6 +15,7 @@ import {
   GitBranch,
   Layers3,
   Play,
+  Pencil,
   Plus,
   RefreshCw,
   Search,
@@ -21,57 +27,6 @@ import {
   Zap,
 } from 'lucide-react';
 
-type Step = {
-  id: string;
-  name: string;
-  type: 'transform' | 'delay' | 'checkpoint';
-  dependsOn: string[];
-  config: { delayMs?: number; failUntilAttempt?: number; fields?: Record<string, unknown> };
-  maxAttempts?: number;
-};
-type Workflow = { id: string; name: string; description: string; steps: Step[] };
-type Job = Step & {
-  step_id: string;
-  status: string;
-  attempt: number;
-  output: unknown;
-  error: string | null;
-  worker: string | null;
-  available_at: number;
-};
-type Run = {
-  id: string;
-  workflow_id: string;
-  status: string;
-  created_at: number;
-  finished_at: number | null;
-  definition: Workflow;
-  input: unknown;
-  jobs: Job[];
-  events: {
-    id: number;
-    type: string;
-    message: string;
-    step_id: string | null;
-    created_at: number;
-  }[];
-};
-type Worker = { id: string; online: boolean; seen_at: number };
-async function api<T>(path: string, body?: unknown): Promise<T> {
-  const response = await fetch(
-    '/api' + path,
-    body === undefined
-      ? {}
-      : {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body),
-        },
-  );
-  const result = await response.json();
-  if (!response.ok) throw new Error(result.details?.join('; ') || result.error || 'Request failed');
-  return result;
-}
 const short = (id: string) => id.slice(0, 8);
 const date = (time: number) =>
   new Date(time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
@@ -95,6 +50,7 @@ function App() {
   const [error, setError] = useState(''),
     [connected, setConnected] = useState(false),
     [modal, setModal] = useState(false),
+    [editing, setEditing] = useState<Workflow | null>(null),
     [launch, setLaunch] = useState<Workflow | null>(null),
     [input, setInput] = useState('{\n  "orderId": "ORD-1042",\n  "customer": "Ada"\n}'),
     [busy, setBusy] = useState(false);
@@ -169,7 +125,7 @@ function App() {
           <span className="brand-icon">
             <Anchor size={23} />
           </span>
-          TaskHarbor<span className="version">v0.1</span>
+          TaskHarbor<span className="version">v0.1.1</span>
         </a>
         <div className="workspace">
           <span className="avatar">P</span>
@@ -244,6 +200,7 @@ function App() {
                 className="primary"
                 onClick={() => {
                   setError('');
+                  setEditing(null);
                   setModal(true);
                 }}
               >
@@ -320,7 +277,9 @@ function App() {
                           <span className={'flow-icon tone-' + (i % 3)}>
                             <FlowIcon size={23} />
                           </span>
-                          <span className="tag">{w.steps.length} steps</span>
+                          <span className="tag">
+                            v{w.version} · {w.steps.length} steps
+                          </span>
                         </div>
                         <button className="card-name" onClick={() => setSelected(w)}>
                           {w.name}
@@ -403,7 +362,9 @@ function App() {
       </main>
       {selected && (
         <Dialog title={selected.name} close={() => setSelected(null)}>
-          <p className="muted">{selected.description}</p>
+          <p className="muted">
+            Version {selected.version} · {selected.description}
+          </p>
           <div className="step-list">
             {selected.steps.map((s) => (
               <div className="definition-step" key={s.id}>
@@ -430,6 +391,22 @@ function App() {
           >
             <Play size={16} /> Run workflow
           </button>
+          <button
+            className="secondary edit-action"
+            onClick={async () => {
+              try {
+                const latest = await api<Workflow>('/workflows/' + selected.id);
+                setEditing(latest);
+                setSelected(null);
+                setModal(true);
+              } catch (e) {
+                setError((e as Error).message);
+              }
+            }}
+          >
+            <Pencil size={15} /> Edit latest version
+          </button>
+          <RevisionHistory workflowId={selected.id} />
         </Dialog>
       )}
       {launch && (
@@ -460,6 +437,7 @@ function App() {
       )}
       {modal && (
         <Builder
+          initial={editing}
           close={() => setModal(false)}
           created={async () => {
             setModal(false);
@@ -474,7 +452,9 @@ function App() {
               <div>
                 <span className="eyebrow">RUN INSPECTOR</span>
                 <h2>{run.definition.name}</h2>
-                <code>{short(run.id)}</code>
+                <code>
+                  {short(run.id)} · workflow v{run.workflow_version}
+                </code>
               </div>
               <button
                 className="icon-button"
@@ -677,7 +657,9 @@ function RecentRuns({ runs, open }: { runs: Run[]; open: (r: Run) => void }) {
                     <button className="run-link" onClick={() => open(r)}>
                       {r.definition.name}
                     </button>
-                    <code>{short(r.id)}</code>
+                    <code>
+                      {short(r.id)} · v{r.workflow_version}
+                    </code>
                   </td>
                   <td>
                     <Badge status={r.status} />
@@ -716,291 +698,6 @@ function RecentRuns({ runs, open }: { runs: Run[]; open: (r: Run) => void }) {
         </div>
       )}
     </section>
-  );
-}
-function Dialog({
-  title,
-  close,
-  children,
-}: {
-  title: string;
-  close: () => void;
-  children: React.ReactNode;
-}) {
-  const panel = useRef<HTMLElement>(null),
-    onClose = useRef(close);
-  onClose.current = close;
-  useEffect(() => {
-    const previous = document.activeElement as HTMLElement;
-    panel.current?.querySelector<HTMLElement>('input,button,textarea,select')?.focus();
-    const key = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose.current();
-      if (e.key === 'Tab') {
-        const elements = [
-          ...(panel.current?.querySelectorAll<HTMLElement>(
-            'button:not(:disabled),input,textarea,select,a[href]',
-          ) ?? []),
-        ];
-        const first = elements[0],
-          last = elements.at(-1);
-        if (e.shiftKey && document.activeElement === first) {
-          e.preventDefault();
-          last?.focus();
-        }
-        if (!e.shiftKey && document.activeElement === last) {
-          e.preventDefault();
-          first?.focus();
-        }
-      }
-    };
-    document.addEventListener('keydown', key);
-    return () => {
-      document.removeEventListener('keydown', key);
-      previous?.focus();
-    };
-  }, []);
-  return (
-    <div className="modal-backdrop" onClick={close}>
-      <section
-        ref={panel}
-        className="dialog"
-        role="dialog"
-        aria-modal="true"
-        aria-label={title}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="dialog-top">
-          <h2>{title}</h2>
-          <button className="icon-button" aria-label="Close dialog" onClick={close}>
-            <X size={20} />
-          </button>
-        </div>
-        {children}
-      </section>
-    </div>
-  );
-}
-function Builder({ close, created }: { close: () => void; created: () => Promise<void> }) {
-  const [name, setName] = useState(''),
-    [description, setDescription] = useState(''),
-    [steps, setSteps] = useState<Step[]>([
-      {
-        id: 'step_1',
-        name: 'Prepare data',
-        type: 'transform',
-        dependsOn: [],
-        config: { fields: { prepared: true } },
-        maxAttempts: 3,
-      },
-    ]);
-  const [error, setError] = useState(''),
-    [busy, setBusy] = useState(false),
-    [fieldDrafts, setFieldDrafts] = useState<Record<string, string>>({});
-  const update = (index: number, patch: Partial<Step>) => {
-    setError('');
-    setSteps(steps.map((s, i) => (i === index ? { ...s, ...patch } : s)));
-  };
-  async function save() {
-    setBusy(true);
-    setError('');
-    try {
-      const definition = steps.map((s) => {
-        if (s.type !== 'transform') return s;
-        const fields = JSON.parse(fieldDrafts[s.id] ?? JSON.stringify(s.config.fields ?? {}));
-        if (!fields || Array.isArray(fields) || typeof fields !== 'object')
-          throw new Error('Fields must be a JSON object.');
-        return { ...s, config: { fields } };
-      });
-      await api('/workflows', { name, description, steps: definition });
-      await created();
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setBusy(false);
-    }
-  }
-  return (
-    <Dialog title="Create workflow" close={close}>
-      <div className="builder-intro">Compose a dependency graph from safe, built-in tasks.</div>
-      <label className="field">
-        Name
-        <input
-          value={name}
-          placeholder="e.g. Customer onboarding"
-          maxLength={80}
-          onChange={(e) => {
-            setName(e.target.value);
-            setError('');
-          }}
-        />
-      </label>
-      <label className="field">
-        Description
-        <input
-          value={description}
-          placeholder="What does this workflow accomplish?"
-          maxLength={400}
-          onChange={(e) => setDescription(e.target.value)}
-        />
-      </label>
-      <div className="builder-steps">
-        {steps.map((s, i) => (
-          <div className="builder-step" key={s.id}>
-            <div className="builder-step-heading">
-              <strong>Step {i + 1}</strong>
-              <code>{s.id}</code>
-              {steps.length > 1 && (
-                <button
-                  className="icon-button"
-                  aria-label={'Remove ' + s.id}
-                  onClick={() =>
-                    setSteps(
-                      steps
-                        .filter((x) => x.id !== s.id)
-                        .map((x) => ({ ...x, dependsOn: x.dependsOn.filter((d) => d !== s.id) })),
-                    )
-                  }
-                >
-                  <X size={15} />
-                </button>
-              )}
-            </div>
-            <div className="form-row">
-              <label className="field">
-                Label
-                <input value={s.name} onChange={(e) => update(i, { name: e.target.value })} />
-              </label>
-              <label className="field">
-                Task
-                <select
-                  value={s.type}
-                  onChange={(e) =>
-                    update(i, {
-                      type: e.target.value as Step['type'],
-                      config:
-                        e.target.value === 'transform'
-                          ? { fields: {} }
-                          : { delayMs: 1000, failUntilAttempt: 0 },
-                    })
-                  }
-                >
-                  <option value="transform">JSON transform</option>
-                  <option value="delay">Delay</option>
-                  <option value="checkpoint">Retry checkpoint</option>
-                </select>
-              </label>
-            </div>
-            {s.type === 'transform' ? (
-              <label className="field">
-                Fields to merge (JSON object)
-                <input
-                  value={fieldDrafts[s.id] ?? JSON.stringify(s.config.fields ?? {})}
-                  onChange={(e) => {
-                    setFieldDrafts({ ...fieldDrafts, [s.id]: e.target.value });
-                    setError('');
-                  }}
-                />
-              </label>
-            ) : (
-              <div className="form-row">
-                <label className="field">
-                  Delay (milliseconds)
-                  <input
-                    type="number"
-                    min="0"
-                    max="15000"
-                    value={s.config.delayMs}
-                    onChange={(e) =>
-                      update(i, { config: { ...s.config, delayMs: Number(e.target.value) } })
-                    }
-                  />
-                </label>
-                {s.type === 'checkpoint' && (
-                  <label className="field">
-                    Fail first N attempts
-                    <input
-                      type="number"
-                      min="0"
-                      max="5"
-                      value={s.config.failUntilAttempt}
-                      onChange={(e) =>
-                        update(i, {
-                          config: { ...s.config, failUntilAttempt: Number(e.target.value) },
-                        })
-                      }
-                    />
-                  </label>
-                )}
-              </div>
-            )}
-            <label className="field">
-              Maximum attempts
-              <input
-                type="number"
-                min="1"
-                max="5"
-                value={s.maxAttempts}
-                onChange={(e) => update(i, { maxAttempts: Number(e.target.value) })}
-              />
-            </label>
-            {i > 0 && (
-              <fieldset>
-                <legend>Depends on</legend>
-                {steps.slice(0, i).map((parent) => (
-                  <label className="checkbox" key={parent.id}>
-                    <input
-                      type="checkbox"
-                      checked={s.dependsOn.includes(parent.id)}
-                      onChange={(e) =>
-                        update(i, {
-                          dependsOn: e.target.checked
-                            ? [...s.dependsOn, parent.id]
-                            : s.dependsOn.filter((x) => x !== parent.id),
-                        })
-                      }
-                    />
-                    {parent.name}
-                  </label>
-                ))}
-              </fieldset>
-            )}
-          </div>
-        ))}
-      </div>
-      <button
-        className="secondary"
-        disabled={steps.length >= 20}
-        onClick={() => {
-          const id = 'step_' + (Math.max(0, ...steps.map((s) => Number(s.id.split('_')[1]))) + 1);
-          setSteps([
-            ...steps,
-            {
-              id,
-              name: 'New step',
-              type: 'delay',
-              dependsOn: [steps[steps.length - 1].id],
-              config: { delayMs: 1000 },
-              maxAttempts: 3,
-            },
-          ]);
-        }}
-      >
-        <Plus size={15} /> Add step
-      </button>
-      {error && (
-        <div className="alert" role="alert">
-          {error}
-        </div>
-      )}
-      <div className="dialog-actions">
-        <button className="secondary" onClick={close}>
-          Cancel
-        </button>
-        <button className="primary" disabled={busy || !name.trim()} onClick={save}>
-          {busy ? 'Saving…' : 'Create workflow'}
-        </button>
-      </div>
-    </Dialog>
   );
 }
 export default App;
