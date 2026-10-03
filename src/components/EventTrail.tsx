@@ -1,31 +1,92 @@
 import { useEffect, useState } from 'react';
 import { Search, ListFilter } from 'lucide-react';
 import type { Run } from '../types';
-import { eventTone, filterEvents } from '../eventFilters';
+import { eventTone } from '../eventFilters';
+import { api } from '../api';
 import type { EventCategory } from '../eventFilters';
 const time = (value: number) =>
   new Date(value).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
 export default function EventTrail({
-  events,
+  runId,
   step,
   clearStep,
 }: {
-  events: Run['events'];
+  runId: string;
   step: string | null;
   clearStep: () => void;
 }) {
   const [query, setQuery] = useState(''),
     [category, setCategory] = useState<EventCategory>('all'),
     [newest, setNewest] = useState(false),
-    [limit, setLimit] = useState(50);
-  useEffect(() => setLimit(50), [query, category, newest, step]);
-  const matching = filterEvents(events, { query, category, newest, step });
+    [cursor, setCursor] = useState<string | null>(null),
+    [pageNumber, setPageNumber] = useState(1),
+    [refresh, setRefresh] = useState(0);
+  type Page = {
+    items: Run['events'];
+    total: number;
+    recorded: number;
+    snapshot: number;
+    nextCursor: string | null;
+  };
+  const [page, setPage] = useState<Page | null>(null),
+    [loading, setLoading] = useState(false),
+    [error, setError] = useState('');
+  function reset() {
+    setCursor(null);
+    setPageNumber(1);
+    setRefresh((value) => value + 1);
+  }
+  useEffect(() => {
+    reset();
+  }, [step]);
+  useEffect(() => {
+    const controller = new AbortController();
+    let timer: ReturnType<typeof setTimeout>;
+    setPage(null);
+    setLoading(true);
+    setError('');
+    async function fetchPage() {
+      try {
+        const params = new URLSearchParams({
+          limit: '50',
+          q: query,
+          category,
+          order: newest ? 'newest' : 'oldest',
+        });
+        if (step) params.set('step', step);
+        if (cursor) params.set('cursor', cursor);
+        const result = await api<Page>(
+          '/runs/' + runId + '/events?' + params,
+          undefined,
+          'GET',
+          controller.signal,
+        );
+        if (!controller.signal.aborted) {
+          setPage(result);
+          setError('');
+        }
+      } catch (e) {
+        if (!controller.signal.aborted) setError((e as Error).message);
+      } finally {
+        if (!controller.signal.aborted) {
+          setLoading(false);
+          if (!cursor) timer = setTimeout(fetchPage, 1500);
+        }
+      }
+    }
+    const debounce = setTimeout(() => void fetchPage(), 180);
+    return () => {
+      controller.abort();
+      clearTimeout(timer);
+      clearTimeout(debounce);
+    };
+  }, [runId, query, category, newest, step, cursor, refresh]);
   const filtered = !!query.trim() || category !== 'all' || !!step;
   return (
     <section className="event-console" aria-label="Execution event trail">
       <h3 className="subheading">
-        <ListFilter size={15} /> Event trail <span>{events.length} recorded</span>
+        <ListFilter size={15} /> Event trail <span>{page?.recorded ?? '…'} recorded</span>
       </h3>
       <div className="event-controls">
         <label className="event-search">
@@ -35,12 +96,21 @@ export default function EventTrail({
             placeholder="Search messages, types, step IDs…"
             maxLength={100}
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              reset();
+            }}
           />
         </label>
         <label className="field">
           Event group
-          <select value={category} onChange={(e) => setCategory(e.target.value as EventCategory)}>
+          <select
+            value={category}
+            onChange={(e) => {
+              setCategory(e.target.value as EventCategory);
+              reset();
+            }}
+          >
             <option value="all">All events</option>
             <option value="errors">Errors</option>
             <option value="retries">Retries</option>
@@ -51,7 +121,10 @@ export default function EventTrail({
           Event order
           <select
             value={newest ? 'newest' : 'oldest'}
-            onChange={(e) => setNewest(e.target.value === 'newest')}
+            onChange={(e) => {
+              setNewest(e.target.value === 'newest');
+              reset();
+            }}
           >
             <option value="oldest">Oldest first</option>
             <option value="newest">Newest first</option>
@@ -60,7 +133,8 @@ export default function EventTrail({
       </div>
       <div className="event-results">
         <span role="status">
-          {matching.length} matching / {events.length} recorded{step ? ` · step: ${step}` : ''}
+          {page?.total ?? '…'} matching / {page?.recorded ?? '…'} recorded
+          {step ? ` · step: ${step}` : ''}
         </span>
         {filtered && (
           <button
@@ -69,6 +143,7 @@ export default function EventTrail({
               setQuery('');
               setCategory('all');
               clearStep();
+              reset();
             }}
           >
             Clear event filters
@@ -76,10 +151,10 @@ export default function EventTrail({
         )}
       </div>
       <div className="event-trail">
-        {!matching.length && (
+        {!loading && page && !page.items.length && (
           <div className="event-empty">
             <Search size={20} />
-            <strong>{events.length ? 'No matching events' : 'No events recorded yet'}</strong>
+            <strong>{page.recorded ? 'No matching events' : 'No events recorded yet'}</strong>
             <p>
               {filtered
                 ? 'Adjust the search, event group or selected step.'
@@ -87,7 +162,7 @@ export default function EventTrail({
             </p>
           </div>
         )}
-        {matching.slice(0, limit).map((event) => (
+        {page?.items.map((event) => (
           <div className={'event tone-' + eventTone(event.type)} key={event.id}>
             <i aria-hidden="true" />
             <div>
@@ -106,11 +181,37 @@ export default function EventTrail({
           </div>
         ))}
       </div>
-      {matching.length > limit && (
-        <button className="secondary small event-more" onClick={() => setLimit(limit + 50)}>
-          Show 50 more · {matching.length - limit} remaining
-        </button>
+      {error && (
+        <p className="alert" role="alert">
+          {error}
+        </p>
       )}
+      {loading && (
+        <p className="muted" role="status">
+          Loading events…
+        </p>
+      )}
+      <div className="event-pagination">
+        <span>
+          Page {pageNumber} · {page?.items.length ?? 0} shown
+          {cursor ? ' · anchored history' : ' · live first page'}
+        </span>
+        <div>
+          <button className="secondary small" onClick={reset} disabled={loading}>
+            Refresh latest
+          </button>
+          <button
+            className="secondary small"
+            disabled={loading || !page?.nextCursor}
+            onClick={() => {
+              setCursor(page!.nextCursor);
+              setPageNumber((value) => value + 1);
+            }}
+          >
+            Next 50 events
+          </button>
+        </div>
+      </div>
     </section>
   );
 }

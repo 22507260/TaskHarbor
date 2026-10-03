@@ -193,7 +193,7 @@ export default function RunInspector({
             </div>
           ))}
         </div>
-        <EventTrail events={run.events} step={selected} clearStep={() => setSelected(null)} />
+        <EventTrail runId={run.id} step={selected} clearStep={() => setSelected(null)} />
         <h3 className="subheading">Payloads</h3>
         <details>
           <summary>Run input</summary>

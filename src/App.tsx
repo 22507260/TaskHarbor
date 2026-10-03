@@ -78,7 +78,7 @@ function App() {
   });
   async function openRun(id: string) {
     try {
-      setRun(await api<Run>('/runs/' + id));
+      setRun(await api<Run>('/runs/' + id + '?events=omit'));
       setTab('Runs');
     } catch (e) {
       setError((e as Error).message);
@@ -129,7 +129,7 @@ function App() {
     let live = true;
     const id = run.id;
     const tick = () =>
-      api<Run>('/runs/' + id)
+      api<Run>('/runs/' + id + '?events=omit')
         .then((x) => {
           if (live) setRun(x);
         })
@@ -168,7 +168,7 @@ function App() {
           <span className="brand-icon">
             <Anchor size={23} />
           </span>
-          TaskHarbor<span className="version">v0.1.8</span>
+          TaskHarbor<span className="version">v0.1.9</span>
         </a>
         <div className="workspace">
           <span className="avatar">P</span>
