@@ -94,3 +94,15 @@ The checked-in CI workflow targets Windows and Linux. Its remote execution statu
 
 ![Retry event filters](images/event-filters.jpg)
 ![Mobile event search](images/event-filters-mobile.jpg)
+
+## v0.1.9 server-side event pagination verification
+
+- Fifty-three tests passed, including five new event API/store cases: 126 timestamp-tied events traversed completely in both directions; run isolation; append-boundary stability; Unicode/literal SQL search; combined filters; cursor rejection; 50-row response bounds; legacy detail compatibility and invalid query handling.
+- Production TypeScript/Vite build passed.
+- Browser: a local synthetic 20-step checkpoint workflow completed with two attempts per step, producing 82 persisted events through the actual worker. The inspector returned 50 events on the first page and 32 on the anchored second page; the final continuation button was disabled.
+- Refresh latest restored the live first page. Retries returned 20 of 82 records; searching check_19 within that group returned one record. Clearing restored all events.
+- At 390px, document width remained 375px with no horizontal overflow, and retry filtering rendered 20 records with visible refresh/continuation controls. Viewport was reset afterward.
+- Event responses are bounded; substring search and counts still scan the run's stored events. No high-volume throughput claim is made.
+
+![Anchored event page](images/event-pagination.jpg)
+![Mobile event pagination](images/event-pagination-mobile.jpg)

@@ -2,7 +2,7 @@
 
 A local-first workflow operations platform: compose dependency graphs, run background jobs and inspect every attempt from a usable web console.
 
-TaskHarbor is an evolving full-stack engineering project. Version 0.1.8 provides a working execution engine and UI; the roadmap grows it toward a multi-user, PostgreSQL-backed service.
+TaskHarbor is an evolving full-stack engineering project. Version 0.1.9 provides a working execution engine and UI; the roadmap grows it toward a multi-user, PostgreSQL-backed service.
 
 ![Workflow console](docs/images/operations-console.jpg)
 
@@ -151,6 +151,10 @@ The inspector's **Event trail** searches literal text across messages, event typ
 
 Choose oldest/newest first; ordering uses append-only event IDs, including timestamp ties. Error labels represent terminal job/run failures. Retries, recovery, skips and cancellation are warnings; they do not necessarily mean a failed run. Records have explicit labels as well as color.
 
-Fifty matching events are rendered initially; **Show 50 more** expands the visible list. This is client-side filtering and progressive rendering of the already-loaded run detail, not server-side event pagination. Filters remain while that inspector stays open and reset when another run is opened.
+Search and filtering run on the server. Each page contains at most 50 events; **Next 50 events** continues within the current insertion boundary so new arrivals do not shift older pages. The first page refreshes every 1.5 seconds; continuation pages stay fixed. **Refresh latest** returns to the live first page. Changing a filter or order restarts pagination. Filters remain while that inspector stays open and reset when another run is opened.
+
+Run state and jobs continue polling separately, with event history omitted from repeated detail responses. The default detail API still includes events for compatibility. See [the event pagination decision](docs/adr/0006-event-pagination.md).
 
 ![Filtered retry event trail](docs/images/event-filters.jpg)
+
+![Server-paginated event history](docs/images/event-pagination.jpg)

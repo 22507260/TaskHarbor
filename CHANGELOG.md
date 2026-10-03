@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.9
+
+- Move event search and filters into SQLite with bounded cursor pagination.
+- Keep continuation pages inside an append-ID boundary in both sort directions.
+- Poll the live first event page separately; omit events from repeated run-detail responses while preserving API defaults.
+- Add loading/error states and a scrollable event panel with explicit refresh/continuation controls.
+- Add five API/store tests for boundaries, Unicode/literal search, cursor validation and compatibility.
+
 ## 0.1.8
 
 - Search execution events by message, type or step identity with Unicode normalization.

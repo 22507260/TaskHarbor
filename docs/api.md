@@ -121,3 +121,22 @@ Runs and history summaries expose nullable `parent_run_id`. New jobs start at at
 ```
 
 `POST /workflow-imports/preview` validates this document and returns its normalized form with defaults, without writing data. `POST /workflow-imports` independently revalidates it and creates a fresh workflow at revision 1, returning 201. Names may match existing workflows; repeat imports create new copies. No runs are started. Unknown keys at document, workflow, step and config levels are rejected rather than silently dropped. Only format version 1 and existing bounded built-in tasks are accepted; DAG validation applies. Invalid JSON/documents return 400 and requests over 64 KiB return 413.
+
+## Search and paginate execution events
+
+`GET /runs/:id/events` returns `{items, total, recorded, snapshot, nextCursor}`. Items retain the persisted event fields. Missing runs return 404.
+
+| Parameter  | Behavior                                                                                                                                                  |
+| ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `limit`    | Integer 1–50; default 50                                                                                                                                  |
+| `q`        | Literal substring across message, event type and step ID (or `workflow` for run events); trimmed, at most 100 characters, Unicode NFKC/lowercase matching |
+| `category` | `all` (default), `errors` (job/run terminal failures), `retries` (`job.retry`), `recovery` (`job.recovered`)                                              |
+| `step`     | Exact step ID, 1–40 characters                                                                                                                            |
+| `order`    | `oldest` (default) or `newest`, ordered by event ID                                                                                                       |
+| `cursor`   | Opaque `nextCursor`; retain run, search, category, step and order                                                                                         |
+
+`total` counts matching events within the insertion boundary; `recorded` counts all events for that run within the same boundary. `snapshot` is its maximum event ID. Continuations exclude later inserts and use strict ID comparisons, including when timestamps tie. A null cursor marks the final page. Refresh without a cursor for current records. Invalid parameters, malformed cursors or a changed run/filter/order return 400. Cursors are navigation data, not authorization credentials.
+
+Example: `/runs/:id/events?category=retries&order=newest&limit=50`. Continue with the returned cursor and the same filters. Page size may change between pages.
+
+`GET /runs/:id?events=omit` returns normal run detail with an empty `events` array, allowing independent job/detail polling. Omitted `events` or `events=include` preserves the full legacy response. Other values return 400. The legacy `/runs` list remains unchanged.
