@@ -2,7 +2,7 @@
 
 A local-first workflow operations platform: compose dependency graphs, run background jobs and inspect every attempt from a usable web console.
 
-TaskHarbor is an evolving full-stack engineering project. Version 0.1.2 provides a working execution engine and UI; the roadmap grows it toward a multi-user, PostgreSQL-backed service.
+TaskHarbor is an evolving full-stack engineering project. Version 0.1.3 provides a working execution engine and UI; the roadmap grows it toward a multi-user, PostgreSQL-backed service.
 
 ![Workflow console](docs/images/workflows.jpg)
 
@@ -95,7 +95,7 @@ The database and payloads remain local and are ignored by Git. For SQLite, use a
 
 This release binds to loopback and targets one trusted local user. Authentication, tenant isolation, retention, scheduling, production observability and deployment hardening are future work. The API rejects unrelated browser origins, but that is not a substitute for authentication.
 
-Each worker executes one job at a time. SQLite serializes writes and synchronous database calls can block the Node event loop: this is a deliberate small-scale starting point. History provides search, status/workflow filters and anchored cursor pagination; dashboard metrics cover all recorded runs. The legacy `/runs` endpoint still returns the newest 100 full runs for compatibility. Edits create numbered revisions; stale saves return a conflict and unchanged saves keep the current version. Historical revisions are inspectable; launching or restoring a specific past revision is future work. The UI and API accept any valid DAG. There are no arbitrary-code or shell task types. The checkpoint simulates a failure and the quality-gate sample does not actually scan code.
+Each worker executes one job at a time. SQLite serializes writes and synchronous database calls can block the Node event loop: this is a deliberate small-scale starting point. History provides search, status/workflow filters and anchored cursor pagination; dashboard metrics cover all recorded runs. The legacy `/runs` endpoint still returns the newest 100 full runs for compatibility. Edits create numbered revisions; stale saves return a conflict and unchanged saves keep the current version. Completed runs can be rerun using their original snapshot or the latest workflow. Selecting an arbitrary historical revision or restoring it remains future work. The UI and API accept any valid DAG. There are no arbitrary-code or shell task types. The checkpoint simulates a failure and the quality-gate sample does not actually scan code.
 
 Node's built-in SQLite API is experimental in Node 24. The project pins its supported major version and keeps database access behind `Store` so a later adapter can replace it.
 
@@ -106,3 +106,11 @@ Use a feature issue with measurable acceptance criteria, a focused implementatio
 ## Türkçe
 
 TaskHarbor; akış oluşturma, arka plan görevleri, yeniden deneme, worker takibi ve çalışma geçmişini birleştiren bir full-stack projedir. İlk sürüm yerelde çalışır. Uzun vadede PostgreSQL, kimlik doğrulama, zamanlama, güvenli entegrasyonlar ve gözlemlenebilirlik ekleyeceğiz. Amaç, portföyde gösterilebilen bir ürünün yanında test ve mimari kararlarla desteklenen gerçek geliştirme geçmişi oluşturmaktır.
+
+## Rerun with edited input
+
+Open a completed, failed or cancelled run and choose **Rerun with edited input**. Keep **Source snapshot** to reproduce its definition, or select **Latest workflow** to try a fix. Edit the JSON object and start a new execution. The source remains unchanged, every step gets fresh attempts, and **Source run** links the new execution to its parent. A stale latest-version selection returns a conflict and offers an explicit reload.
+
+Repeated submission of the same request creates one execution, including concurrent API processes. This deduplicates run creation, not task side effects. See [the rerun decision](docs/adr/0004-rerun-requests.md).
+
+![Rerun execution](docs/images/rerun-inspector.jpg)

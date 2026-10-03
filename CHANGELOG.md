@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.3
+
+- Rerun terminal executions with edited JSON input and source/latest workflow selection.
+- Preserve source results and link new executions to their parent run.
+- Deduplicate concurrent rerun requests transactionally; reject reused keys with different payloads.
+- Detect stale latest-version selections and offer reload without losing edited input.
+- Add schema migration 4 and seven tests, including concurrent real processes.
+- Extract the run inspector into a separate component.
+
 ## 0.1.2
 
 - Search historical runs by workflow name or ID and combine workflow/status filters.

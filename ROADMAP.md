@@ -2,20 +2,20 @@
 
 These are planned milestones, not completed capabilities. Each milestone should ship a usable increment, tests and a demo.
 
-## v0.1 — Local workflow operations
+## v0.1 â€” Local workflow operations
 
 Delivered: workflow creation, DAG validation, durable jobs, leased workers, retries, cancellation, dependency previews, run inspection and process integration tests.
 
-## v0.2 — Everyday workflow authoring
+## v0.2 â€” Everyday workflow authoring
 
-- Delivered in v0.1.1: extracted client API/types, dialog, builder and revision history. Next: extract the run inspector and share validated contracts with the backend.
+- Delivered in v0.1.1: extracted client API/types, dialog, builder and revision history. Delivered in v0.1.3: extracted run inspector. Next: share validated contracts with the backend.
 - Delivered in v0.1.1: edit and version workflows without changing historical runs, with conflict detection and revision inspection.
 - Visual graph authoring, dependency/output previews and workflow import/export.
-- Delivered in v0.1.2: run search, status/workflow filters, anchored pagination and global dashboard metrics. Next: paginate/filter events and rerun with edited input.
+- Delivered in v0.1.2: run search, status/workflow filters, anchored pagination and global dashboard metrics. Delivered in v0.1.3: rerun with edited input and source/latest definition selection. Next: paginate/filter events.
 - Browser automation in CI; keyboard and screen-reader review of the full console.
 - Deliverable: create, revise and troubleshoot an onboarding workflow entirely from the UI.
 
-## v0.3 — PostgreSQL and operational confidence
+## v0.3 â€” PostgreSQL and operational confidence
 
 - Introduce explicit versioned migrations and a repository adapter contract.
 - Implement PostgreSQL transactional claims and concurrent worker tests.
@@ -23,21 +23,21 @@ Delivered: workflow creation, DAG validation, durable jobs, leased workers, retr
 - Compare measured queue throughput and latency for SQLite and PostgreSQL, with reproducible workloads.
 - Deliverable: documented recovery and scaling behavior with benchmark artifacts.
 
-## v0.4 — Teams and security
+## v0.4 â€” Teams and security
 
 - Authentication, workspace membership and scoped authorization.
 - Tenant isolation and access-control tests on every API surface.
 - Secret references with redaction, audit events and rate limits.
 - Deliverable: two workspaces cannot read, execute or modify each other's resources.
 
-## v0.5 — Useful integrations and scheduling
+## v0.5 â€” Useful integrations and scheduling
 
 - Allowlisted HTTP tasks with SSRF protections, timeouts, bounded responses and explicit idempotency keys.
 - Signed webhook triggers and scheduled runs with timezone/DST tests.
 - Idempotent inbound events, dead-letter inspection and replay policies.
 - Deliverable: a real opt-in integration that is safe to retry and inspect.
 
-## v0.6 — Deployment and observability
+## v0.6 â€” Deployment and observability
 
 - Containerized API/workers, managed PostgreSQL deployment and documented backups.
 - OpenTelemetry traces, structured logs, queue/run metrics and alert examples.

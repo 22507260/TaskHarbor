@@ -1,4 +1,4 @@
-# API v0.1.2
+# API v0.1.3
 
 Base URL: `http://127.0.0.1:4310/api`. JSON requests and responses. Local trusted-user API; no authentication in this release. Request bodies are limited to 64 KiB. Validation errors return `400`, unknown resources `404`, disallowed browser origins `403`.
 
@@ -38,7 +38,7 @@ Example workflow request:
 }
 ```
 
-Step IDs must be unique, match `[a-z][a-z0-9_-]{0,39}` and refer to an acyclic graph. Definitions contain 1–20 steps. `maxAttempts` is 1–5 (default 3). Delays are 0–15000ms. Checkpoints deliberately fail until the configured attempt; they do not invoke an external service. Transform fields contain JSON primitive values.
+Step IDs must be unique, match `[a-z][a-z0-9_-]{0,39}` and refer to an acyclic graph. Definitions contain 1â€“20 steps. `maxAttempts` is 1â€“5 (default 3). Delays are 0â€“15000ms. Checkpoints deliberately fail until the configured attempt; they do not invoke an external service. Transform fields contain JSON primitive values.
 
 Run states: `queued`, `running`, `succeeded`, `failed`, `cancelled`. A run remains `running` during retry backoff. Job states additionally include `blocked` and `skipped`; retrying jobs are `queued` with a future `available_at`. Events carry a monotonically increasing database ID, type, step ID and creation timestamp. Worker records remain visible after going offline.
 
@@ -72,7 +72,7 @@ Each run exposes `workflow_version` alongside its copied definition. Starting a 
 
 | Parameter    | Behavior                                                                                         |
 | ------------ | ------------------------------------------------------------------------------------------------ |
-| `limit`      | Integer 1–50, default 10                                                                         |
+| `limit`      | Integer 1â€“50, default 10                                                                       |
 | `q`          | Literal name/ID substring, trimmed, maximum 100 characters; Unicode NFKC/lowercase normalization |
 | `status`     | `queued`, `running`, `succeeded`, `failed` or `cancelled`                                        |
 | `workflowId` | Exact workflow ID                                                                                |
@@ -84,3 +84,22 @@ Results sort by `created_at DESC, id DESC`. `total` counts all matches within th
 Example: `/run-history?limit=5&status=failed&q=delivery`. Continue by adding the returned cursor and keeping the filters. New records are excluded from continuation pages; refreshing without cursor/snapshot starts a live first page. Job states and status-filter membership remain live.
 
 `GET /overview` returns global `total`, `active`, `succeeded`, `completed` and `latestByWorkflow` states. `completed` includes only succeeded and failed runs; use it as the success-rate denominator. This endpoint is independent of history filters and the legacy 100-run window.
+
+## Rerun a terminal execution
+
+`POST /runs/:id/rerun` accepts a strict JSON object:
+
+```json
+{
+  "requestId": "c1fd5ba8-6c61-4b58-91bb-524018b6fcef",
+  "mode": "latest",
+  "expectedVersion": 2,
+  "input": { "customer": "demo" }
+}
+```
+
+`requestId` is a required UUID scoped to the source run. `mode` defaults to `source`; `latest` requires a positive `expectedVersion`. Omitted `input` copies the source input; supplied input must be a JSON object. Source mode uses the exact stored run snapshot. Latest mode checks and snapshots the current workflow atomically.
+
+Only succeeded, failed and cancelled sources are eligible. New creation returns `201` with the full run; an identical repeated request returns `200` with that run's current state. A changed payload using the same key, active source or stale latest version returns `409`. Missing source returns `404`; invalid requests return `400`. Receipt lookup precedes version checking, so a successful request can be retried after later workflow edits.
+
+Runs and history summaries expose nullable `parent_run_id`. New jobs start at attempt zero. The original run, jobs and events remain unchanged. Each rerun adds a `run.rerun` event to its new event trail.

@@ -7,7 +7,7 @@ Local verification performed on Windows with Node 24.21.0.
 - Prettier checking passed; npm audit reported zero known vulnerabilities at verification time.
 - Browser: created a two-step Customer onboarding workflow, saved it, launched it and observed both steps succeed with the configured merged JSON field.
 - Browser: Resilient delivery failed twice, persisted 1000ms and 2000ms retry delays, then completed its third attempt and downstream receipt step.
-- Browser: checked the console at 1440×1000 and 390×844. At the narrow size, document width equalled viewport width; the execution table scrolls within its own container.
+- Browser: checked the console at 1440Ã—1000 and 390Ã—844. At the narrow size, document width equalled viewport width; the execution table scrolls within its own container.
 - Browser: opened the production-built client served by Fastify and verified API-backed workflows and run history.
 
 Screenshots contain real local API results with synthetic demonstration payloads. The extra Customer onboarding workflow was created during browser verification and is not part of the three default seed definitions.
@@ -30,3 +30,13 @@ The checked-in CI workflow targets Windows and Linux. Its remote execution statu
 - Browser: chose five rows per page, navigated to the older second page and inspected its anchored-history indicator.
 - Browser: combined failed status and name search, verified the five matching synthetic failures, and checked the no-results state.
 - Browser: combined workflow and status filters, opened the 390px layout, confirmed no document overflow, and exercised clear filters. The execution table scrolls inside its container.
+
+## v0.1.3 verification
+
+- Thirty-three automated tests passed, including source snapshot preservation, latest-version selection, fresh attempts, cancelled sources, lineage chains, canonical request replay, conflicts and two concurrent real submission processes.
+- Browser: an array input was rejected with a visible JSON-object validation message.
+- Browser: reran a failed v1 checkpoint using its source snapshot; the new v1 run failed as expected while the source remained unchanged. Followed the source-run link back to the original.
+- Browser: selected latest v2 and edited input; the new execution succeeded and its output contained the edited verification field and inspected=true. The inspector displayed its source link and rerun event.
+- Screenshot uses synthetic local verification data.
+
+![Successful latest-version rerun](images/rerun-inspector.jpg)
