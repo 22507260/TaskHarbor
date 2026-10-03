@@ -2,20 +2,23 @@ import { useEffect, useState } from 'react';
 import { History } from 'lucide-react';
 import { api } from '../api';
 import type { Revision } from '../types';
+import RevisionComparison from './RevisionComparison';
 export default function RevisionHistory({ workflowId }: { workflowId: string }) {
   const [revisions, setRevisions] = useState<Revision[]>([]),
     [error, setError] = useState('');
   useEffect(() => {
-    let live = true;
-    api<Revision[]>('/workflows/' + workflowId + '/revisions')
+    const controller = new AbortController();
+    setRevisions([]);
+    setError('');
+    api<Revision[]>('/workflows/' + workflowId + '/revisions', undefined, 'GET', controller.signal)
       .then((rows) => {
-        if (live) setRevisions(rows);
+        if (!controller.signal.aborted) setRevisions(rows);
       })
       .catch((e) => {
-        if (live) setError(e.message);
+        if (!controller.signal.aborted) setError(e.message);
       });
     return () => {
-      live = false;
+      controller.abort();
     };
   }, [workflowId]);
   return (
@@ -27,6 +30,10 @@ export default function RevisionHistory({ workflowId }: { workflowId: string }) 
         <p role="alert" className="muted">
           {error}
         </p>
+      )}
+      {revisions.length > 1 && <RevisionComparison key={workflowId} revisions={revisions} />}
+      {revisions.length === 1 && (
+        <p className="muted">One version recorded. Save a workflow change to compare revisions.</p>
       )}
       {revisions.map((revision) => (
         <details key={revision.version}>
