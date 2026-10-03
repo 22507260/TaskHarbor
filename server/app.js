@@ -27,7 +27,7 @@ export function createApp(store = new Store()) {
     request.log.error(error);
     reply.code(500).send({ error: 'Internal server error' });
   });
-  app.get('/api/health', () => ({ status: 'ok', version: '0.1.8' }));
+  app.get('/api/health', () => ({ status: 'ok', version: '0.1.9' }));
   app.get('/api/workflows', () => store.workflows());
   app.post('/api/workflows', (request, reply) =>
     reply.code(201).send(store.createWorkflow(request.body)),
@@ -65,10 +65,20 @@ export function createApp(store = new Store()) {
   app.get('/api/runs', () => store.runs());
   app.get('/api/run-history', (request) => store.runHistory(request.query));
   app.get('/api/overview', () => store.overview());
+  app.get('/api/runs/:id', (request, reply) => {
+    const { events } = z
+      .object({ events: z.enum(['include', 'omit']).default('include') })
+      .parse(request.query);
+    return (
+      store.run(request.params.id, events !== 'omit') ??
+      reply.code(404).send({ error: 'Run not found' })
+    );
+  });
   app.get(
-    '/api/runs/:id',
+    '/api/runs/:id/events',
     (request, reply) =>
-      store.run(request.params.id) ?? reply.code(404).send({ error: 'Run not found' }),
+      store.eventHistory(request.params.id, request.query) ??
+      reply.code(404).send({ error: 'Run not found' }),
   );
   app.post('/api/workflows/:id/runs', (request, reply) => {
     const { input } = z

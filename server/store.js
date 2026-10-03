@@ -6,6 +6,7 @@ import { workflowSchema, samples } from './definition.js';
 import { migrate } from './migrations.js';
 import { historyQuery, decodeCursor, encodeCursor } from './history.js';
 import { rerunSchema, requestHash } from './rerun.js';
+import { eventQuery, eventCursor, encodeEventCursor } from './events.js';
 
 const terminal = new Set(['succeeded', 'failed', 'cancelled']);
 export class Store {
@@ -272,6 +273,65 @@ export class Store {
         .all()
         .filter((row) => row.status !== null);
       return { ...counts, latestByWorkflow };
+    }, 'DEFERRED');
+  }
+  eventHistory(runId, query = {}) {
+    const filters = eventQuery.parse(query),
+      cursor = eventCursor(runId, filters);
+    return this.transaction(() => {
+      if (!this.db.prepare('SELECT id FROM runs WHERE id=?').get(runId)) return null;
+      const snapshot =
+        cursor?.snapshot ??
+        this.db.prepare('SELECT COALESCE(MAX(id),0) AS id FROM events WHERE run_id=?').get(runId)
+          .id;
+      const clauses = ['run_id=?', 'id<=?'],
+        args = [runId, snapshot];
+      if (filters.step) {
+        clauses.push('step_id=?');
+        args.push(filters.step);
+      }
+      const groups = {
+        errors: ['job.failed', 'run.failed'],
+        retries: ['job.retry'],
+        recovery: ['job.recovered'],
+      };
+      if (filters.category !== 'all') {
+        const types = groups[filters.category];
+        clauses.push(`type IN (${types.map(() => '?').join(',')})`);
+        args.push(...types);
+      }
+      if (filters.q) {
+        clauses.push(
+          "instr(search_fold(message || char(10) || type || char(10) || COALESCE(step_id,'workflow')),search_fold(?))>0",
+        );
+        args.push(filters.q);
+      }
+      const where = clauses.join(' AND ');
+      const total = this.db
+        .prepare(`SELECT COUNT(*) AS count FROM events WHERE ${where}`)
+        .get(...args).count;
+      const recorded = this.db
+        .prepare('SELECT COUNT(*) AS count FROM events WHERE run_id=? AND id<=?')
+        .get(runId, snapshot).count;
+      const direction = filters.order === 'newest' ? 'DESC' : 'ASC';
+      const pageWhere = cursor
+        ? `${where} AND id ${filters.order === 'newest' ? '<' : '>'} ?`
+        : where;
+      const pageArgs = cursor ? [...args, cursor.id] : args;
+      const rows = this.db
+        .prepare(`SELECT * FROM events WHERE ${pageWhere} ORDER BY id ${direction} LIMIT ?`)
+        .all(...pageArgs, filters.limit + 1);
+      const items = rows.slice(0, filters.limit);
+      return {
+        items,
+        total,
+        recorded,
+        snapshot,
+        nextCursor:
+          rows.length > filters.limit
+            ? encodeEventCursor(runId, filters, items.at(-1).id, snapshot)
+            : null,
+      };
     }, 'DEFERRED');
   }
   run(id, detail = true) {
