@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.6
+
+- Add an interactive live dependency map to the run inspector.
+- Select a step to inspect its attempts, worker, dependencies, errors and output.
+- Filter the event trail to the selected step and restore it with clear selection.
+- Show persisted retry eligibility times and keep large graphs inside a scrollable panel.
+- Add inspector dialog semantics, keyboard focus containment and Escape dismissal.
+- Test unsorted branching graphs, 20-step layouts and invalid graph rejection.
+
 ## 0.1.5
 
 - Export latest workflow definitions in a strict versioned portable JSON format.

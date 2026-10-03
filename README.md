@@ -2,7 +2,7 @@
 
 A local-first workflow operations platform: compose dependency graphs, run background jobs and inspect every attempt from a usable web console.
 
-TaskHarbor is an evolving full-stack engineering project. Version 0.1.5 provides a working execution engine and UI; the roadmap grows it toward a multi-user, PostgreSQL-backed service.
+TaskHarbor is an evolving full-stack engineering project. Version 0.1.6 provides a working execution engine and UI; the roadmap grows it toward a multi-user, PostgreSQL-backed service.
 
 ![Workflow console](docs/images/operations-console.jpg)
 
@@ -128,3 +128,11 @@ Choose **Import** from Workflows, select a JSON file or paste a document, then *
 [Example portable workflow](examples/order-enrichment.taskharbor.json) · [Portable format decision](docs/adr/0005-portable-workflows.md)
 
 ![Import preview](docs/images/workflow-import.jpg)
+
+## Inspect the execution map
+
+Open a run to see its snapshotted dependency graph with live job states and attempt counts. Select a node (or a step in the list) to inspect its worker, dependencies, error and JSON output. The event trail then shows only that step's events; **Clear selection** restores the complete trail. During retry backoff, details show the retry eligibility time, not a promised execution time.
+
+Node labels, icons and status text complement color. Buttons support keyboard activation; Escape closes the inspector and focus stays inside it while open. Large graphs scroll within the panel. This is an execution view, not a graph editor.
+
+![Interactive execution map](docs/images/execution-map.jpg)

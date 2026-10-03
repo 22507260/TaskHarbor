@@ -62,3 +62,14 @@ The checked-in CI workflow targets Windows and Linux. Its remote execution statu
 
 ![Portable workflow preview](images/workflow-import.jpg)
 ![Portable export document](images/workflow-export.jpg)
+
+## v0.1.6 execution map verification
+
+- Forty tests cover prior behavior plus deterministic layout of unsorted branches, dependency direction, maximum depth/width (20 steps), node bounds/non-overlap and defensive rejection of cyclic/missing/duplicate graph nodes.
+- Browser: launched Parallel quality gates, observed its queued graph and successful completion, selected Quality gate and inspected its output and two step-specific events. Clear selection restored all ten events.
+- Browser: selected a failed historical checkpoint and verified its error, attempt exhaustion and absence of output. Escape dismissed the inspector.
+- At 390px, document width stayed at 375px; the four-step graph had 684px content inside a 291px scroll area without page overflow. Returned viewport to default.
+- Screenshots show real local runs with synthetic payloads.
+
+![Execution graph and selected step](images/execution-map.jpg)
+![Failed step on mobile](images/execution-map-mobile.jpg)
