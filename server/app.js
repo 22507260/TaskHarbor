@@ -26,7 +26,7 @@ export function createApp(store = new Store()) {
     request.log.error(error);
     reply.code(500).send({ error: 'Internal server error' });
   });
-  app.get('/api/health', () => ({ status: 'ok', version: '0.1.1' }));
+  app.get('/api/health', () => ({ status: 'ok', version: '0.1.2' }));
   app.get('/api/workflows', () => store.workflows());
   app.post('/api/workflows', (request, reply) =>
     reply.code(201).send(store.createWorkflow(request.body)),
@@ -51,6 +51,8 @@ export function createApp(store = new Store()) {
     );
   });
   app.get('/api/runs', () => store.runs());
+  app.get('/api/run-history', (request) => store.runHistory(request.query));
+  app.get('/api/overview', () => store.overview());
   app.get(
     '/api/runs/:id',
     (request, reply) =>

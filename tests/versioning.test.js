@@ -101,7 +101,7 @@ test('v1 migration preserves workflows, run snapshots, jobs and event history ac
   for (let i = 0; i < 2; i++) {
     const store = new Store(path);
     try {
-      assert.equal(store.db.prepare('PRAGMA user_version').get().user_version, 2);
+      assert.equal(store.db.prepare('PRAGMA user_version').get().user_version, 3);
       assert.equal(store.workflow('workflow').version, 1);
       assert.equal(store.revisions('workflow').length, 1);
       const run = store.run('run');

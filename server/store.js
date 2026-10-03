@@ -4,6 +4,7 @@ import { mkdirSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { workflowSchema, samples } from './definition.js';
 import { migrate } from './migrations.js';
+import { historyQuery, decodeCursor, encodeCursor } from './history.js';
 
 const terminal = new Set(['succeeded', 'failed', 'cancelled']);
 export class Store {
@@ -14,6 +15,11 @@ export class Store {
     if (path !== ':memory:') mkdirSync(dirname(path), { recursive: true });
     this.clock = clock;
     this.db = new DatabaseSync(path, { timeout: 5000 });
+    this.db.function('search_fold', { deterministic: true }, (value) =>
+      String(value ?? '')
+        .normalize('NFKC')
+        .toLowerCase(),
+    );
     this.db.exec('PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON;');
     try {
       migrate(this.db);
@@ -22,8 +28,8 @@ export class Store {
       throw error;
     }
   }
-  transaction(fn) {
-    this.db.exec('BEGIN IMMEDIATE');
+  transaction(fn, mode = 'IMMEDIATE') {
+    this.db.exec(`BEGIN ${mode}`);
     try {
       const result = fn();
       this.db.exec('COMMIT');
@@ -135,6 +141,79 @@ export class Store {
       .prepare('SELECT id FROM runs ORDER BY created_at DESC,rowid DESC LIMIT 100')
       .all()
       .map((x) => this.run(x.id, false));
+  }
+  runHistory(query = {}) {
+    const filters = historyQuery.parse(query),
+      cursor = decodeCursor(filters.cursor, filters);
+    return this.transaction(() => {
+      const snapshot =
+        cursor?.snapshot ??
+        filters.snapshot ??
+        this.db.prepare('SELECT COALESCE(MAX(rowid),0) AS value FROM runs').get().value;
+      const clauses = ['r.rowid<=?'],
+        params = [snapshot];
+      if (filters.status) {
+        clauses.push('r.status=?');
+        params.push(filters.status);
+      }
+      if (filters.workflowId) {
+        clauses.push('r.workflow_id=?');
+        params.push(filters.workflowId);
+      }
+      if (filters.q) {
+        // instr searches literal text: percent, underscore and quotes are not SQL wildcards.
+        clauses.push(
+          "(instr(search_fold(r.id),search_fold(?))>0 OR instr(search_fold(json_extract(r.definition,'$.name')),search_fold(?))>0)",
+        );
+        params.push(filters.q, filters.q);
+      }
+      const where = clauses.join(' AND ');
+      const total = this.db
+        .prepare(`SELECT COUNT(*) AS value FROM runs r WHERE ${where}`)
+        .get(...params).value;
+      const pageWhere = cursor
+        ? `${where} AND (r.created_at<? OR (r.created_at=? AND r.id<?))`
+        : where;
+      const pageParams = cursor ? [...params, cursor.time, cursor.time, cursor.id] : params;
+      const rows = this.db
+        .prepare(
+          `SELECT r.id,r.workflow_id,r.workflow_version,r.status,r.created_at,r.finished_at,
+        json_extract(r.definition,'$.name') AS workflow_name,
+        (SELECT COUNT(*) FROM jobs j WHERE j.run_id=r.id) AS step_count,
+        (SELECT COUNT(*) FROM jobs j WHERE j.run_id=r.id AND j.status='succeeded') AS completed_steps
+        FROM runs r WHERE ${pageWhere} ORDER BY r.created_at DESC,r.id DESC LIMIT ?`,
+        )
+        .all(...pageParams, filters.limit + 1);
+      const hasMore = rows.length > filters.limit,
+        items = rows.slice(0, filters.limit);
+      return {
+        items,
+        total,
+        snapshot,
+        nextCursor: hasMore ? encodeCursor(items.at(-1), snapshot, filters) : null,
+      };
+    }, 'DEFERRED');
+  }
+  overview() {
+    return this.transaction(() => {
+      const counts = this.db
+        .prepare(
+          `SELECT COUNT(*) AS total,
+        COALESCE(SUM(status IN ('queued','running')),0) AS active,
+        COALESCE(SUM(status='succeeded'),0) AS succeeded,
+        COALESCE(SUM(status IN ('succeeded','failed')),0) AS completed FROM runs`,
+        )
+        .get();
+      const latestByWorkflow = this.db
+        .prepare(
+          `SELECT w.id AS workflow_id,
+        (SELECT r.status FROM runs r WHERE r.workflow_id=w.id ORDER BY r.created_at DESC,r.id DESC LIMIT 1) AS status
+        FROM workflows w`,
+        )
+        .all()
+        .filter((row) => row.status !== null);
+      return { ...counts, latestByWorkflow };
+    }, 'DEFERRED');
   }
   run(id, detail = true) {
     const row = this.db.prepare('SELECT * FROM runs WHERE id=?').get(id);

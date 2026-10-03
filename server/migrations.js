@@ -4,7 +4,7 @@ export function migrate(db) {
   db.exec('BEGIN IMMEDIATE');
   try {
     let version = db.prepare('PRAGMA user_version').get().user_version;
-    if (version > 2) throw new Error(`Unsupported database version: ${version}`);
+    if (version > 3) throw new Error(`Unsupported database version: ${version}`);
     if (version === 0) {
       db.exec(`
         CREATE TABLE workflows(id TEXT PRIMARY KEY, definition TEXT NOT NULL, created_at INTEGER NOT NULL);
@@ -30,6 +30,15 @@ export function migrate(db) {
         );
         INSERT INTO workflow_revisions SELECT id,1,definition,created_at FROM workflows;
         PRAGMA user_version=2;
+      `);
+      version = 2;
+    }
+    if (version === 2) {
+      db.exec(`
+        CREATE INDEX runs_history ON runs(created_at DESC,id DESC);
+        CREATE INDEX runs_workflow_history ON runs(workflow_id,created_at DESC,id DESC);
+        CREATE INDEX runs_status_history ON runs(status,created_at DESC,id DESC);
+        PRAGMA user_version=3;
       `);
     }
     db.exec('COMMIT');
