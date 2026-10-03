@@ -168,7 +168,7 @@ function App() {
           <span className="brand-icon">
             <Anchor size={23} />
           </span>
-          TaskHarbor<span className="version">v0.1.5</span>
+          TaskHarbor<span className="version">v0.1.6</span>
         </a>
         <div className="workspace">
           <span className="avatar">P</span>
@@ -627,6 +627,7 @@ function App() {
       )}
       {run && (
         <RunInspector
+          key={run.id}
           run={run}
           close={() => setRun(null)}
           openParent={openRun}
