@@ -31,6 +31,7 @@ export type Run = {
   id: string;
   workflow_id: string;
   workflow_version: number;
+  parent_run_id: string | null;
   status: string;
   created_at: number;
   finished_at: number | null;
@@ -48,7 +49,13 @@ export type Run = {
 export type Worker = { id: string; online: boolean; seen_at: number };
 export type RunSummary = Pick<
   Run,
-  'id' | 'workflow_id' | 'workflow_version' | 'status' | 'created_at' | 'finished_at'
+  | 'id'
+  | 'workflow_id'
+  | 'workflow_version'
+  | 'parent_run_id'
+  | 'status'
+  | 'created_at'
+  | 'finished_at'
 > & {
   workflow_name: string;
   step_count: number;
