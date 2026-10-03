@@ -5,6 +5,7 @@ import { dirname, resolve } from 'node:path';
 import { workflowSchema, samples } from './definition.js';
 import { migrate } from './migrations.js';
 import { historyQuery, decodeCursor, encodeCursor } from './history.js';
+import { rerunSchema, requestHash } from './rerun.js';
 
 const terminal = new Set(['succeeded', 'failed', 'cancelled']);
 export class Store {
@@ -112,28 +113,86 @@ export class Store {
     return this.transaction(() => {
       const workflow = this.db.prepare('SELECT * FROM workflows WHERE id=?').get(workflowId);
       if (!workflow) return null;
-      const id = randomUUID(),
-        now = this.clock(),
-        definition = JSON.parse(workflow.definition);
+      return this.createRun(workflowId, workflow.definition, workflow.version, input);
+    });
+  }
+  // Internal primitive: callers hold a write transaction so the snapshot,
+  // fresh jobs, lineage and idempotency receipt commit together.
+  createRun(workflowId, encoded, version, input, parentRunId = null) {
+    if (!this.db.isTransaction) throw new Error('createRun requires a transaction');
+    const id = randomUUID(),
+      now = this.clock(),
+      definition = JSON.parse(encoded);
+    this.db
+      .prepare(
+        'INSERT INTO runs(id,workflow_id,definition,input,status,created_at,workflow_version,parent_run_id) VALUES(?,?,?,?,?,?,?,?)',
+      )
+      .run(id, workflowId, encoded, JSON.stringify(input), 'queued', now, version, parentRunId);
+    for (const step of definition.steps)
       this.db
-        .prepare(
-          'INSERT INTO runs(id,workflow_id,definition,input,status,created_at,workflow_version) VALUES(?,?,?,?,?,?,?)',
-        )
-        .run(
-          id,
-          workflowId,
-          workflow.definition,
-          JSON.stringify(input),
-          'queued',
-          now,
-          workflow.version,
+        .prepare('INSERT INTO jobs(id,run_id,step_id,status,available_at) VALUES(?,?,?,?,?)')
+        .run(randomUUID(), id, step.id, step.dependsOn.length ? 'blocked' : 'queued', now);
+    this.event(id, null, 'run.created', 'Run queued');
+    if (parentRunId)
+      this.event(
+        id,
+        null,
+        'run.rerun',
+        `Created from run ${parentRunId} using workflow v${version}`,
+      );
+    return this.run(id);
+  }
+  rerun(sourceId, body) {
+    const request = rerunSchema.parse(body),
+      hash = requestHash(request);
+    return this.transaction(() => {
+      const receipt = this.db
+        .prepare('SELECT * FROM run_requests WHERE source_run_id=? AND request_id=?')
+        .get(sourceId, request.requestId);
+      if (receipt) {
+        if (receipt.request_hash !== hash) {
+          const error = new Error(
+            'This requestId was already used with a different rerun request.',
+          );
+          error.statusCode = 409;
+          throw error;
+        }
+        return { run: this.run(receipt.run_id), reused: true };
+      }
+      const source = this.db.prepare('SELECT * FROM runs WHERE id=?').get(sourceId);
+      if (!source) return null;
+      if (!terminal.has(source.status)) {
+        const error = new Error('Wait for the source run to finish or cancel it before rerunning.');
+        error.statusCode = 409;
+        throw error;
+      }
+      const workflow =
+        request.mode === 'latest'
+          ? this.db.prepare('SELECT * FROM workflows WHERE id=?').get(source.workflow_id)
+          : null;
+      if (request.mode === 'latest' && !workflow) {
+        const error = new Error('Workflow not found');
+        error.statusCode = 404;
+        throw error;
+      }
+      if (workflow && workflow.version !== request.expectedVersion) {
+        const error = new Error(
+          `Workflow changed to version ${workflow.version}. Reload the latest version before rerunning.`,
         );
-      for (const step of definition.steps)
-        this.db
-          .prepare('INSERT INTO jobs(id,run_id,step_id,status,available_at) VALUES(?,?,?,?,?)')
-          .run(randomUUID(), id, step.id, step.dependsOn.length ? 'blocked' : 'queued', now);
-      this.event(id, null, 'run.created', 'Run queued');
-      return this.run(id);
+        error.statusCode = 409;
+        throw error;
+      }
+      const run = this.createRun(
+        source.workflow_id,
+        workflow?.definition ?? source.definition,
+        workflow?.version ?? source.workflow_version,
+        request.input ?? JSON.parse(source.input),
+        sourceId,
+      );
+      this.db
+        .prepare('INSERT INTO run_requests VALUES(?,?,?,?)')
+        .run(sourceId, request.requestId, hash, run.id);
+      return { run, reused: false };
     });
   }
   runs() {
@@ -177,7 +236,7 @@ export class Store {
       const pageParams = cursor ? [...params, cursor.time, cursor.time, cursor.id] : params;
       const rows = this.db
         .prepare(
-          `SELECT r.id,r.workflow_id,r.workflow_version,r.status,r.created_at,r.finished_at,
+          `SELECT r.id,r.workflow_id,r.workflow_version,r.parent_run_id,r.status,r.created_at,r.finished_at,
         json_extract(r.definition,'$.name') AS workflow_name,
         (SELECT COUNT(*) FROM jobs j WHERE j.run_id=r.id) AS step_count,
         (SELECT COUNT(*) FROM jobs j WHERE j.run_id=r.id AND j.status='succeeded') AS completed_steps

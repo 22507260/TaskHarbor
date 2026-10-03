@@ -26,7 +26,7 @@ export function createApp(store = new Store()) {
     request.log.error(error);
     reply.code(500).send({ error: 'Internal server error' });
   });
-  app.get('/api/health', () => ({ status: 'ok', version: '0.1.2' }));
+  app.get('/api/health', () => ({ status: 'ok', version: '0.1.3' }));
   app.get('/api/workflows', () => store.workflows());
   app.post('/api/workflows', (request, reply) =>
     reply.code(201).send(store.createWorkflow(request.body)),
@@ -70,6 +70,11 @@ export function createApp(store = new Store()) {
     (request, reply) =>
       store.cancel(request.params.id) ?? reply.code(404).send({ error: 'Run not found' }),
   );
+  app.post('/api/runs/:id/rerun', (request, reply) => {
+    const result = store.rerun(request.params.id, request.body);
+    if (!result) return reply.code(404).send({ error: 'Run not found' });
+    return reply.code(result.reused ? 200 : 201).send(result.run);
+  });
   app.get('/api/workers', () => store.workers());
   app.addHook('onClose', () => store.close());
   return app;
