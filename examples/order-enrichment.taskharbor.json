@@ -1,0 +1,51 @@
+{
+  "format": "taskharbor.workflow",
+  "formatVersion": 1,
+  "workflow": {
+    "name": "Order enrichment",
+    "description": "Validate an order, enrich its payload and prepare a fulfillment record.",
+    "steps": [
+      {
+        "id": "validate",
+        "name": "Validate order",
+        "type": "transform",
+        "dependsOn": [],
+        "config": {
+          "delayMs": 500,
+          "failUntilAttempt": 0,
+          "fields": {
+            "validated": true
+          }
+        },
+        "maxAttempts": 3
+      },
+      {
+        "id": "enrich",
+        "name": "Enrich customer",
+        "type": "delay",
+        "dependsOn": ["validate"],
+        "config": {
+          "delayMs": 2200,
+          "failUntilAttempt": 0,
+          "fields": {}
+        },
+        "maxAttempts": 3
+      },
+      {
+        "id": "fulfill",
+        "name": "Prepare fulfillment",
+        "type": "transform",
+        "dependsOn": ["enrich"],
+        "config": {
+          "delayMs": 500,
+          "failUntilAttempt": 0,
+          "fields": {
+            "fulfillment": "ready",
+            "region": "EU"
+          }
+        },
+        "maxAttempts": 3
+      }
+    ]
+  }
+}

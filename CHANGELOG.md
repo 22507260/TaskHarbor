@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.5
+
+- Export latest workflow definitions in a strict versioned portable JSON format.
+- Import files or pasted JSON through validation, preview, rename and explicit creation.
+- Create fresh workflow identities and revision 1 without copying execution history.
+- Reject unknown fields, unsupported formats, invalid graphs and oversized requests.
+- Provide selectable JSON export text alongside downloading.
+- Add four API/roundtrip tests and a portable example.
+
 ## 0.1.4
 
 - Refresh the console with a live engine overview, stronger typography and layered surfaces.

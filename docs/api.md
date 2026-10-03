@@ -1,4 +1,4 @@
-# API v0.1.3
+# API v0.1.5
 
 Base URL: `http://127.0.0.1:4310/api`. JSON requests and responses. Local trusted-user API; no authentication in this release. Request bodies are limited to 64 KiB. Validation errors return `400`, unknown resources `404`, disallowed browser origins `403`.
 
@@ -103,3 +103,21 @@ Example: `/run-history?limit=5&status=failed&q=delivery`. Continue by adding the
 Only succeeded, failed and cancelled sources are eligible. New creation returns `201` with the full run; an identical repeated request returns `200` with that run's current state. A changed payload using the same key, active source or stale latest version returns `409`. Missing source returns `404`; invalid requests return `400`. Receipt lookup precedes version checking, so a successful request can be retried after later workflow edits.
 
 Runs and history summaries expose nullable `parent_run_id`. New jobs start at attempt zero. The original run, jobs and events remain unchanged. Each rerun adds a `run.rerun` event to its new event trail.
+
+## Portable workflow documents
+
+`GET /workflows/:id/export` returns the latest definition in a portable document. Missing workflows return 404. The response excludes workflow ID, database version, revisions and all execution records.
+
+```json
+{
+  "format": "taskharbor.workflow",
+  "formatVersion": 1,
+  "workflow": {
+    "name": "Portable example",
+    "description": "",
+    "steps": [{ "id": "prepare", "name": "Prepare", "type": "transform" }]
+  }
+}
+```
+
+`POST /workflow-imports/preview` validates this document and returns its normalized form with defaults, without writing data. `POST /workflow-imports` independently revalidates it and creates a fresh workflow at revision 1, returning 201. Names may match existing workflows; repeat imports create new copies. No runs are started. Unknown keys at document, workflow, step and config levels are rejected rather than silently dropped. Only format version 1 and existing bounded built-in tasks are accepted; DAG validation applies. Invalid JSON/documents return 400 and requests over 64 KiB return 413.

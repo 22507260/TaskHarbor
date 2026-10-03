@@ -2,7 +2,7 @@
 
 A local-first workflow operations platform: compose dependency graphs, run background jobs and inspect every attempt from a usable web console.
 
-TaskHarbor is an evolving full-stack engineering project. Version 0.1.4 provides a working execution engine and UI; the roadmap grows it toward a multi-user, PostgreSQL-backed service.
+TaskHarbor is an evolving full-stack engineering project. Version 0.1.5 provides a working execution engine and UI; the roadmap grows it toward a multi-user, PostgreSQL-backed service.
 
 ![Workflow console](docs/images/operations-console.jpg)
 
@@ -118,3 +118,13 @@ Repeated submission of the same request creates one execution, including concurr
 ## Console design
 
 The workspace overview displays live workflow, active-run and online-worker counts from the local API. Workflow cards show their actual dependency graph, entry-step count and connection count. Stable identity-based accents stay consistent while searching. Responsive cards and an icon navigation rail keep the console usable on smaller screens; focus indicators and reduced-motion preferences are supported.
+
+## Share workflow definitions
+
+Open a workflow and choose **Export latest JSON**. Review the portable document, download it or select the JSON text to copy it. Exports contain the latest definition only: no workspace IDs, revision history, run inputs, outputs or worker records. Definitions can contain values in configured transform fields, so review those before sharing.
+
+Choose **Import** from Workflows, select a JSON file or paste a document, then **Validate and preview**. Review the steps, optionally rename the copy, and choose **Create imported workflow**. Each import creates a new ID at revision 1 without starting a run or changing an existing workflow. Repeating an import creates another copy. Version 1 documents use `format: "taskharbor.workflow"` and `formatVersion: 1`; other versions and unknown fields are rejected. The file/paste limit is 64 KiB.
+
+[Example portable workflow](examples/order-enrichment.taskharbor.json) · [Portable format decision](docs/adr/0005-portable-workflows.md)
+
+![Import preview](docs/images/workflow-import.jpg)

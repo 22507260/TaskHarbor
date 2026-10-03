@@ -52,3 +52,13 @@ The checked-in CI workflow targets Windows and Linux. Its remote execution statu
 
 ![Modern desktop console](images/operations-console.jpg)
 ![Mobile console](images/operations-mobile.jpg)
+
+## v0.1.5 portable workflow verification
+
+- Thirty-seven tests passed. New cases cover all seeded DAG roundtrips, identity/history exclusion, default normalization, preview without writes, latest-revision export, unknown fields, unsupported tasks/versions, invalid graphs, malformed JSON, request-size limits and origin guards.
+- Browser: rejected format version 2, previewed a valid two-step document, renamed it and created Imported onboarding at revision 1. Workspace workflow count increased while run count remained unchanged until explicitly launched.
+- Browser: exported the imported definition and inspected its normalized selectable JSON. The automated in-app download-event capture timed out; downloaded file delivery was not confirmed by that automation.
+- Browser: explicitly launched the imported workflow and verified its execution separately. Synthetic demonstration data only.
+
+![Portable workflow preview](images/workflow-import.jpg)
+![Portable export document](images/workflow-export.jpg)
