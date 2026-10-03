@@ -2,7 +2,7 @@
 
 A local-first workflow operations platform: compose dependency graphs, run background jobs and inspect every attempt from a usable web console.
 
-TaskHarbor is an evolving full-stack engineering project. Version 0.1 provides a working execution engine and UI; the roadmap grows it toward a multi-user, PostgreSQL-backed service.
+TaskHarbor is an evolving full-stack engineering project. Version 0.1.1 provides a working execution engine and UI; the roadmap grows it toward a multi-user, PostgreSQL-backed service.
 
 ![Workflow console](docs/images/workflows.jpg)
 
@@ -27,15 +27,23 @@ For a built client, run `npm run build`, then `npm start` and `npm run worker` i
 
 ## What works today
 
-- React + TypeScript console with responsive layouts, workflow creation, real dependency previews, execution history and a run inspector.
+- React + TypeScript console with responsive layouts, workflow creation/editing, version history, real dependency previews, execution history and a run inspector.
 - Fastify API with Zod validation for unique step IDs, acyclic dependencies, missing dependencies and bounded task settings.
 - SQLite persistence with WAL and transactional job claims across worker processes on the same machine.
 - Five-second leases, one-second renewal, recovery after worker failure and fencing of stale results.
 - Persisted attempts, exponential retry backoff, dependency failure propagation and run cancellation.
-- Immutable workflow snapshots per run, worker heartbeats and an append-only execution event trail.
+- Immutable workflow revisions with optimistic editing, versioned run snapshots, worker heartbeats and an append-only execution event trail.
 - Safe built-in tasks: merge primitive JSON fields, delay and a controlled failure checkpoint. Tasks consume the run input or merge direct dependency outputs; when keys conflict, dependency order determines the winner.
 - Dashboard polling every 1.5 seconds and run detail polling every second.
 - Unit, API and real two-worker process tests; a Windows/Linux CI configuration.
+
+## Edit and version a workflow
+
+Open a workflow card, choose **Edit latest version**, make a change and save. Each changed definition becomes a new numbered revision. Existing runs retain their original definition and version. Expand **Version history** to inspect past definitions. If another editor saved first, your draft stays visible; explicitly discard and reload to continue from the latest version.
+
+Existing v0.1 databases migrate automatically on startup. Stop older API/worker processes before upgrading and back up the SQLite database using a consistent SQLite backup. Failed migrations roll back; newer unsupported schemas are rejected.
+
+![Version history](docs/images/version-history.jpg)
 
 ## Architecture
 
@@ -79,7 +87,7 @@ The database and payloads remain local and are ignored by Git. For SQLite, use a
 
 This release binds to loopback and targets one trusted local user. Authentication, tenant isolation, retention, scheduling, production observability and deployment hardening are future work. The API rejects unrelated browser origins, but that is not a substitute for authentication.
 
-Each worker executes one job at a time. SQLite serializes writes and synchronous database calls can block the Node event loop: this is a deliberate small-scale starting point. Runs are listed newest first with a 100-run limit; the dashboard metrics describe that window. Workflows are create-only in this release. The UI builder selects dependencies among preceding steps; the API accepts any valid DAG. There are no arbitrary-code or shell task types. The checkpoint simulates a failure and the quality-gate sample does not actually scan code.
+Each worker executes one job at a time. SQLite serializes writes and synchronous database calls can block the Node event loop: this is a deliberate small-scale starting point. Runs are listed newest first with a 100-run limit; the dashboard metrics describe that window. Edits create numbered revisions; stale saves return a conflict and unchanged saves keep the current version. Historical revisions are inspectable; launching or restoring a specific past revision is future work. The UI and API accept any valid DAG. There are no arbitrary-code or shell task types. The checkpoint simulates a failure and the quality-gate sample does not actually scan code.
 
 Node's built-in SQLite API is experimental in Node 24. The project pins its supported major version and keeps database access behind `Store` so a later adapter can replace it.
 

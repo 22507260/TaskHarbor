@@ -15,3 +15,10 @@ Screenshots contain real local API results with synthetic demonstration payloads
 The checked-in CI workflow targets Windows and Linux. Its remote execution status must be read from GitHub Actions; local success alone does not establish a green hosted build.
 
 ![Run inspector with persisted retries](images/run-inspector.jpg)
+
+## v0.1.1 verification
+
+- Eighteen automated tests cover the existing engine plus revision immutability, active-run isolation, stale API writes, no-op/invalid edits, migration/reopen preservation, unsupported versions, atomic migration rollback and concurrent editor processes.
+- Browser verification with two simultaneous editor tabs: the first save created revision 2; the second stale save was rejected with a visible conflict while retaining its draft. Explicit reload replaced it with the latest definition.
+- Version history displayed revisions 2 and 1. A subsequent run identified workflow v2 while the old execution remained v1.
+- The migrated local database retained existing workflows, runs and event history.
