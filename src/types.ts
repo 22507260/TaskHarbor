@@ -46,3 +46,24 @@ export type Run = {
   }[];
 };
 export type Worker = { id: string; online: boolean; seen_at: number };
+export type RunSummary = Pick<
+  Run,
+  'id' | 'workflow_id' | 'workflow_version' | 'status' | 'created_at' | 'finished_at'
+> & {
+  workflow_name: string;
+  step_count: number;
+  completed_steps: number;
+};
+export type HistoryPage = {
+  items: RunSummary[];
+  total: number;
+  snapshot: number;
+  nextCursor: string | null;
+};
+export type Overview = {
+  total: number;
+  active: number;
+  succeeded: number;
+  completed: number;
+  latestByWorkflow: { workflow_id: string; status: string }[];
+};

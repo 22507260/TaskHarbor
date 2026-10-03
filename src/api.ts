@@ -6,17 +6,22 @@ export class ApiError extends Error {
     super(message);
   }
 }
-export async function api<T>(path: string, body?: unknown, method = 'POST'): Promise<T> {
-  const response = await fetch(
-    '/api' + path,
-    body === undefined
+export async function api<T>(
+  path: string,
+  body?: unknown,
+  method = 'POST',
+  signal?: AbortSignal,
+): Promise<T> {
+  const response = await fetch('/api' + path, {
+    signal,
+    ...(body === undefined
       ? {}
       : {
           method,
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(body),
-        },
-  );
+        }),
+  });
   const result = await response.json();
   if (!response.ok)
     throw new ApiError(

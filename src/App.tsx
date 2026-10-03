@@ -1,8 +1,10 @@
 import { api } from './api';
-import type { Workflow, Run, Worker, Step } from './types';
+import type { Workflow, Run, Worker, Step, RunSummary, HistoryPage, Overview } from './types';
 import Dialog from './components/Dialog';
 import RevisionHistory from './components/RevisionHistory';
 import Builder from './components/WorkflowBuilder';
+import RunHistory from './components/RunHistory';
+import RunTable from './components/RunTable';
 import React, { useEffect, useState } from 'react';
 import {
   Anchor,
@@ -41,8 +43,23 @@ function Badge({ status }: { status: string }) {
 }
 function App() {
   const [workflows, setWorkflows] = useState<Workflow[]>([]),
-    [runs, setRuns] = useState<Run[]>([]),
+    [runs, setRuns] = useState<RunSummary[]>([]),
     [workers, setWorkers] = useState<Worker[]>([]);
+  const [overview, setOverview] = useState<Overview>({
+    total: 0,
+    active: 0,
+    succeeded: 0,
+    completed: 0,
+    latestByWorkflow: [],
+  });
+  async function openRun(id: string) {
+    try {
+      setRun(await api<Run>('/runs/' + id));
+      setTab('Runs');
+    } catch (e) {
+      setError((e as Error).message);
+    }
+  }
   const [tab, setTab] = useState('Workflows'),
     [query, setQuery] = useState(''),
     [selected, setSelected] = useState<Workflow | null>(null),
@@ -55,13 +72,15 @@ function App() {
     [input, setInput] = useState('{\n  "orderId": "ORD-1042",\n  "customer": "Ada"\n}'),
     [busy, setBusy] = useState(false);
   async function refresh() {
-    const [w, r, k] = await Promise.all([
+    const [w, r, k, summary] = await Promise.all([
       api<Workflow[]>('/workflows'),
-      api<Run[]>('/runs'),
+      api<HistoryPage>('/run-history?limit=5'),
       api<Worker[]>('/workers'),
+      api<Overview>('/overview'),
     ]);
     setWorkflows(w);
-    setRuns(r);
+    setRuns(r.items);
+    setOverview(summary);
     setWorkers(k);
     setConnected(true);
   }
@@ -116,8 +135,7 @@ function App() {
       setBusy(false);
     }
   }
-  const succeeded = runs.filter((r) => r.status === 'succeeded').length,
-    completed = runs.filter((r) => ['succeeded', 'failed'].includes(r.status)).length;
+  const { succeeded, completed } = overview;
   return (
     <div className="shell">
       <aside className="sidebar">
@@ -125,7 +143,7 @@ function App() {
           <span className="brand-icon">
             <Anchor size={23} />
           </span>
-          TaskHarbor<span className="version">v0.1.1</span>
+          TaskHarbor<span className="version">v0.1.2</span>
         </a>
         <div className="workspace">
           <span className="avatar">P</span>
@@ -154,7 +172,7 @@ function App() {
               >
                 <I size={18} />
                 {String(label)}
-                {label === 'Runs' && <span>{runs.length}</span>}
+                {label === 'Runs' && <span>{overview.total}</span>}
               </button>
             );
           })}
@@ -225,13 +243,13 @@ function App() {
           <section className="metrics">
             <Metric
               label="Total runs"
-              value={String(runs.length)}
-              detail="Latest 100 executions"
+              value={String(overview.total)}
+              detail="All recorded executions"
               icon={<Layers3 size={18} />}
             />
             <Metric
               label="Active now"
-              value={String(runs.filter((r) => active(r.status)).length)}
+              value={String(overview.active)}
               detail="Queued and running"
               icon={<Zap size={18} />}
             />
@@ -270,7 +288,7 @@ function App() {
                 {workflows
                   .filter((w) => w.name.toLowerCase().includes(query.toLowerCase()))
                   .map((w, i) => {
-                    const latest = runs.find((r) => r.workflow_id === w.id);
+                    const latest = overview.latestByWorkflow.find((r) => r.workflow_id === w.id);
                     return (
                       <article className="workflow-card" key={w.id}>
                         <div className="card-top">
@@ -313,16 +331,16 @@ function App() {
                   View runs <ChevronRight size={15} />
                 </button>
               </div>
-              <RecentRuns
-                runs={runs.slice(0, 5)}
-                open={(r) => {
-                  setRun(r);
-                  setTab('Runs');
-                }}
-              />
+              <section className="panel">
+                <div className="panel-title">
+                  <h2>Recent executions</h2>
+                  <span className="muted">Latest 5 runs</span>
+                </div>
+                <RunTable runs={runs} open={openRun} />
+              </section>
             </>
           )}
-          {tab === 'Runs' && <RecentRuns runs={runs} open={setRun} />}
+          {tab === 'Runs' && <RunHistory workflows={workflows} open={openRun} />}
           {tab === 'Workers' && (
             <div className="panel">
               <div className="panel-title">
@@ -629,75 +647,6 @@ function Metric({
       <strong>{value}</strong>
       <small>{detail}</small>
     </div>
-  );
-}
-function RecentRuns({ runs, open }: { runs: Run[]; open: (r: Run) => void }) {
-  return (
-    <section className="panel">
-      <div className="panel-title">
-        <h2>Execution history</h2>
-        <span className="muted">{runs.length} runs</span>
-      </div>
-      {runs.length ? (
-        <div className="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Workflow / run</th>
-                <th>Status</th>
-                <th>Progress</th>
-                <th>Started</th>
-                <th>Duration</th>
-              </tr>
-            </thead>
-            <tbody>
-              {runs.map((r) => (
-                <tr key={r.id} onClick={() => open(r)}>
-                  <td>
-                    <button className="run-link" onClick={() => open(r)}>
-                      {r.definition.name}
-                    </button>
-                    <code>
-                      {short(r.id)} · v{r.workflow_version}
-                    </code>
-                  </td>
-                  <td>
-                    <Badge status={r.status} />
-                  </td>
-                  <td>
-                    <div className="progress">
-                      <i
-                        style={{
-                          width:
-                            (r.jobs.filter((j) => j.status === 'succeeded').length /
-                              r.jobs.length) *
-                              100 +
-                            '%',
-                        }}
-                      />
-                    </div>
-                    <small>
-                      {r.jobs.filter((j) => j.status === 'succeeded').length} / {r.jobs.length}{' '}
-                      steps
-                    </small>
-                  </td>
-                  <td>{date(r.created_at)}</td>
-                  <td>
-                    {r.finished_at ? ((r.finished_at - r.created_at) / 1000).toFixed(1) + 's' : '—'}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      ) : (
-        <div className="empty">
-          <Layers3 size={30} />
-          <h3>Your first run starts here</h3>
-          <p>Launch a workflow to see its steps, retries and outputs.</p>
-        </div>
-      )}
-    </section>
   );
 }
 export default App;
