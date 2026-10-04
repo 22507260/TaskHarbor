@@ -135,3 +135,5 @@ The checked-in CI workflow targets Windows and Linux. Its remote execution statu
 ![Visual workflow studio](images/workflow-studio.jpg)
 ![Mobile workflow studio](images/workflow-studio-mobile.jpg)
 ![Actual worker result](images/studio-execution.jpg)
+
+- Initial Linux E2E CI exposed a pointer-coordinate race after fit-view. Handle gestures now use locator stability checks and await font readiness instead of precomputed screen coordinates; the pointer gesture and graph assertions remain intact.

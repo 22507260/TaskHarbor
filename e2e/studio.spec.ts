@@ -197,13 +197,12 @@ test('canvas handles connect nodes and a completed node drag is one undo operati
   await expect(first).toHaveCSS('transform', 'matrix(1, 0, 0, 1, 16, 22.4)');
   await expect(second).toHaveCSS('transform', 'matrix(1, 0, 0, 1, 16, 156.8)');
   await page.getByRole('button', { name: 'Fit View', exact: true }).click();
-  const source = await first.locator('.react-flow__handle.source').boundingBox();
-  const target = await second.locator('.react-flow__handle.target').boundingBox();
-  await page.mouse.move(source!.x + source!.width / 2, source!.y + source!.height / 2);
+  await page.evaluate(() => document.fonts.ready);
+  // Locator actions wait for the handle's screen position to stabilize after fit-view.
+  // Precomputed bounding boxes race the asynchronous camera update on fast CI hosts.
+  await first.locator('.react-flow__handle.source').hover();
   await page.mouse.down();
-  await page.mouse.move(target!.x + target!.width / 2, target!.y + target!.height / 2, {
-    steps: 10,
-  });
+  await second.locator('.react-flow__handle.target').hover();
   await page.mouse.up();
   await expect(page.locator('.react-flow__edge')).toHaveCount(1);
   const before = await first.evaluate((node) => (node as HTMLElement).style.transform);
