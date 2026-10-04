@@ -4,25 +4,35 @@ export default function Dialog({
   title,
   close,
   children,
+  className,
+  onEscape,
+  onKeyDown,
 }: {
   title: string;
   close: () => void;
   children: React.ReactNode;
+  className?: string;
+  onEscape?: () => void;
+  onKeyDown?: React.KeyboardEventHandler;
 }) {
   const panel = useRef<HTMLElement>(null),
-    onClose = useRef(close);
+    onClose = useRef(close),
+    escape = useRef(onEscape);
   onClose.current = close;
+  escape.current = onEscape;
   useEffect(() => {
     const previous = document.activeElement as HTMLElement;
+    const overflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
     panel.current?.querySelector<HTMLElement>('input,button,textarea,select')?.focus();
     const key = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose.current();
+      if (e.key === 'Escape') (escape.current ?? onClose.current)();
       if (e.key === 'Tab') {
         const elements = [
           ...(panel.current?.querySelectorAll<HTMLElement>(
-            'button:not(:disabled),input,textarea,select,a[href]',
+            'button:not(:disabled),input:not(:disabled),textarea,select:not(:disabled),a[href],[tabindex="0"]',
           ) ?? []),
-        ];
+        ].filter((element) => element.getClientRects().length > 0);
         const first = elements[0],
           last = elements.at(-1);
         if (e.shiftKey && document.activeElement === first) {
@@ -38,6 +48,7 @@ export default function Dialog({
     document.addEventListener('keydown', key);
     return () => {
       document.removeEventListener('keydown', key);
+      document.body.style.overflow = overflow;
       previous?.focus();
     };
   }, []);
@@ -45,7 +56,8 @@ export default function Dialog({
     <div className="modal-backdrop" onClick={close}>
       <section
         ref={panel}
-        className="dialog"
+        onKeyDown={onKeyDown}
+        className={'dialog ' + (className ?? '')}
         role="dialog"
         aria-modal="true"
         aria-label={title}

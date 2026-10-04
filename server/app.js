@@ -27,7 +27,7 @@ export function createApp(store = new Store()) {
     request.log.error(error);
     reply.code(500).send({ error: 'Internal server error' });
   });
-  app.get('/api/health', () => ({ status: 'ok', version: '0.1.11' }));
+  app.get('/api/health', () => ({ status: 'ok', version: '0.2.0' }));
   app.get('/api/workflows', () => store.workflows());
   app.post('/api/workflows', (request, reply) =>
     reply.code(201).send(store.createWorkflow(request.body)),

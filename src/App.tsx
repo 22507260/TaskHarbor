@@ -4,7 +4,6 @@ import type { Revision } from './types';
 import type { Workflow, Run, Worker, Step, RunSummary, HistoryPage, Overview } from './types';
 import Dialog from './components/Dialog';
 import RevisionHistory from './components/RevisionHistory';
-import Builder from './components/WorkflowBuilder';
 import RunHistory from './components/RunHistory';
 import RunTable from './components/RunTable';
 import RerunDialog from './components/RerunDialog';
@@ -33,6 +32,7 @@ import {
   Download,
 } from 'lucide-react';
 
+const Builder = React.lazy(() => import('./components/WorkflowBuilder'));
 const date = (time: number) =>
   new Date(time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 function Badge({ status }: { status: string }) {
@@ -94,6 +94,7 @@ function App() {
   const [copyDraft, setCopyDraft] = useState<{
     definition: Revision['definition'];
     version: number;
+    sourceId: string;
   } | null>(null);
   const [error, setError] = useState(''),
     [connected, setConnected] = useState(false),
@@ -174,7 +175,7 @@ function App() {
           <span className="brand-icon">
             <Anchor size={23} />
           </span>
-          TaskHarbor<span className="version">v0.1.11</span>
+          TaskHarbor<span className="version">v0.2.0</span>
         </a>
         <div className="workspace">
           <span className="avatar">P</span>
@@ -542,7 +543,11 @@ function App() {
           <RevisionHistory
             workflowId={selected.id}
             copy={(revision) => {
-              setCopyDraft({ definition: workflowCopy(revision), version: revision.version });
+              setCopyDraft({
+                definition: workflowCopy(revision),
+                version: revision.version,
+                sourceId: selected.id,
+              });
               setEditing(null);
               setSelected(null);
               setModal(true);
@@ -584,15 +589,23 @@ function App() {
         </Dialog>
       )}
       {modal && (
-        <Builder
-          copy={copyDraft}
-          initial={editing}
-          close={() => setModal(false)}
-          created={async () => {
-            setModal(false);
-            await refresh();
-          }}
-        />
+        <React.Suspense
+          fallback={
+            <Dialog title="Loading workflow studio…" close={() => setModal(false)}>
+              <p>Loading editor…</p>
+            </Dialog>
+          }
+        >
+          <Builder
+            copy={copyDraft}
+            initial={editing}
+            close={() => setModal(false)}
+            created={async () => {
+              setModal(false);
+              await refresh();
+            }}
+          />
+        </React.Suspense>
       )}
       {importing && (
         <WorkflowImport

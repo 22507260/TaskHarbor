@@ -2239,3 +2239,346 @@ td {
   overflow-y: auto;
   padding-right: 8px;
 }
+
+/* Workflow studio */
+.studio-dialog {
+  --border: var(--line);
+  --panel: #181e2b;
+  --text: #d9dee9;
+}
+.dialog.studio-dialog {
+  width: calc(100vw - 48px);
+  max-width: 1600px;
+  height: calc(100dvh - 48px);
+  max-height: none;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  overflow: hidden;
+}
+.studio-dialog .dialog-top {
+  padding: 18px 22px;
+  margin: 0;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.studio-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+.studio-toolbar .field {
+  width: 250px;
+  margin: 0;
+}
+.studio-save-state {
+  color: var(--muted);
+  font-size: 11px;
+  flex: 1;
+  min-width: 140px;
+}
+.studio-workspace {
+  display: grid;
+  grid-template-columns: 210px minmax(0, 1fr) 285px;
+  flex: 1;
+  min-height: 0;
+}
+.studio-palette,
+.studio-settings {
+  padding: 20px 16px;
+  overflow-y: auto;
+  background: var(--panel);
+}
+.studio-palette {
+  border-right: 1px solid var(--border);
+}
+.studio-settings {
+  border-left: 1px solid var(--border);
+}
+.studio-workspace h3 {
+  margin: 0 0 12px;
+  font-size: 13px;
+}
+.studio-workspace .muted {
+  font-size: 11px;
+  line-height: 1.6;
+}
+.studio-workspace .field {
+  margin-top: 15px;
+}
+.studio-workspace textarea {
+  min-height: 100px;
+  resize: vertical;
+  width: 100%;
+}
+.studio-task {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 12px;
+  margin: 8px 0;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  color: var(--text);
+  background: rgba(132, 107, 241, 0.07);
+  text-align: left;
+  font-size: 12px;
+}
+.studio-task:hover {
+  border-color: #9681ee;
+}
+.studio-palette h3:not(:first-child) {
+  margin-top: 25px;
+}
+.studio-step-list {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.studio-step-list button {
+  text-align: left;
+  background: transparent;
+  color: var(--text);
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 10px;
+  font-size: 12px;
+}
+.studio-step-list button.active {
+  background: rgba(132, 107, 241, 0.13);
+  border-color: rgba(132, 107, 241, 0.4);
+}
+.studio-step-list small {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 10px;
+}
+.studio-canvas {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  background: #101622;
+}
+.studio-canvas .react-flow {
+  --xy-edge-stroke: #9482d6;
+  --xy-edge-stroke-width: 2;
+  --xy-background-pattern-dots-color: #344052;
+  --xy-controls-button-background-color-default: #202939;
+  --xy-controls-button-color-default: #ddd;
+  --xy-controls-button-border-color-default: #354057;
+}
+.studio-node {
+  width: 190px;
+  padding: 16px;
+  border: 1px solid #3b475d;
+  border-radius: 12px;
+  background: #1c2535;
+  color: #eef0f9;
+  box-shadow: 0 8px 24px #0003;
+}
+.studio-node.selected {
+  border-color: #a38aff;
+  box-shadow:
+    0 0 0 2px #a38aff33,
+    0 8px 24px #0003;
+}
+.studio-node.invalid {
+  border-color: #efae7b;
+}
+.studio-node small {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  color: #baa8f6;
+  font-size: 10px;
+}
+.studio-node strong {
+  display: block;
+  font-size: 13px;
+  margin: 10px 0;
+  overflow-wrap: anywhere;
+}
+.studio-node span {
+  display: block;
+  font-size: 10px;
+  color: #9ba8bd;
+}
+.studio-node .react-flow__handle {
+  width: 10px;
+  height: 10px;
+  background: #b09af6;
+  border: 2px solid #1c2535;
+}
+.studio-empty {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 12px;
+  pointer-events: none;
+  color: #929db2;
+  font-size: 12px;
+  text-align: center;
+  padding: 25px;
+}
+.studio-empty strong {
+  font-size: 18px;
+  color: #ddd9f1;
+}
+.studio-settings-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.studio-settings code {
+  color: var(--muted);
+  font-size: 11px;
+}
+.studio-settings h3:not(:first-child) {
+  margin-top: 22px;
+}
+.studio-dependency {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  padding: 8px 0;
+  font-size: 11px;
+}
+.studio-dependency span {
+  flex: 1;
+  overflow-wrap: anywhere;
+}
+.studio-dependency button {
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  border-radius: 5px;
+  padding: 4px 7px;
+}
+.studio-validation {
+  margin-top: 24px;
+  padding-top: 15px;
+  border-top: 1px solid var(--border);
+}
+.studio-validation button {
+  display: block;
+  text-align: left;
+  border: 0;
+  background: transparent;
+  color: #efae7b;
+  font-size: 11px;
+  margin: 10px 0;
+  overflow-wrap: anywhere;
+}
+.studio-dialog > .alert {
+  margin: 8px 20px;
+  flex-shrink: 0;
+}
+.studio-conflict {
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  background: #efae7b12;
+  font-size: 12px;
+}
+.studio-recovery {
+  max-width: 550px;
+  padding: 40px;
+  margin: auto;
+  text-align: center;
+}
+.studio-recovery p {
+  color: var(--muted);
+  line-height: 1.8;
+}
+.studio-recovery button {
+  margin: 12px 5px;
+}
+.studio-mobile-tabs {
+  display: none;
+}
+@media (max-width: 900px) {
+  .studio-workspace {
+    grid-template-columns: 175px minmax(0, 1fr) 240px;
+  }
+  .studio-toolbar .field {
+    width: 200px;
+  }
+}
+@media (max-width: 700px) {
+  .dialog.studio-dialog {
+    width: 100vw;
+    height: 100dvh;
+    border-radius: 0;
+  }
+  .studio-dialog .dialog-top {
+    padding: 12px 15px;
+  }
+  .studio-dialog .dialog-top h2 {
+    font-size: 16px;
+  }
+  .studio-toolbar {
+    padding: 10px 12px;
+    gap: 7px;
+  }
+  .studio-toolbar .field {
+    width: 100%;
+  }
+  .studio-save-state {
+    width: 100%;
+    flex-basis: 100%;
+  }
+  .studio-toolbar button {
+    padding: 8px;
+    font-size: 11px;
+  }
+  .studio-mobile-tabs {
+    display: flex;
+    gap: 8px;
+    padding: 8px 12px;
+  }
+  .studio-mobile-tabs button {
+    flex: 1;
+    font-size: 12px;
+  }
+  .studio-workspace {
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+  }
+  .studio-canvas {
+    min-height: 260px;
+    height: 260px;
+    flex-shrink: 0;
+    order: -1;
+  }
+  .studio-palette,
+  .studio-settings {
+    display: none;
+    overflow: visible;
+    border: 0;
+  }
+  .studio-palette.mobile-open,
+  .studio-settings.mobile-open {
+    display: block;
+  }
+}
+
+@media (max-width: 700px) {
+  .modal-backdrop:has(.studio-dialog) {
+    padding: 0;
+  }
+  .dialog.studio-dialog {
+    flex-shrink: 0;
+    max-width: 100vw;
+  }
+}
