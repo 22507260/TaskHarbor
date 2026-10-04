@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.11
+
+- Open an editable new-workflow draft from any recorded revision.
+- Preserve historical step settings and dependencies while excluding source identity/history.
+- Suggest a bounded version-labelled copy name; create only after explicit draft submission.
+- Test deep draft isolation and fresh-version creation without changing source workflows or runs.
+
 ## 0.1.10
 
 - Navigate backward through execution-event pages while retaining the insertion boundary.

@@ -113,3 +113,12 @@ The checked-in CI workflow targets Windows and Linux. Its remote execution statu
 - Browser: traversed the existing 82-event fixture from page 1 to page 2 and back to the anchored first page. Previous was disabled at the first page; Refresh latest restored its live mode.
 
 ![Previous event page](images/event-navigation.jpg)
+
+## v0.1.11 historical copy verification
+
+- Fifty-six tests and the production build passed. New tests verify definition-only copying, deep isolation, bounded names and saving an old revision with a fresh ID/version while preserving the source and its existing run.
+- Browser: opened Customer onboarding v1 while its latest version was v2. The draft contained v1's original description and transform fields, with a suggested version-labelled name.
+- Cancel discarded the first draft. A second draft was renamed Historical onboarding copy and saved at v1. Workflow count increased from 7 to 8, source stayed at v2 and run count remained 15. Synthetic local demonstration data only.
+- The development server briefly cached an empty module during filesystem writes; restarting the development processes restored it. The production build passed independently.
+
+![Historical version draft](images/workflow-copy.jpg)

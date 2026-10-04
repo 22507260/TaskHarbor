@@ -2,7 +2,7 @@
 
 A local-first workflow operations platform: compose dependency graphs, run background jobs and inspect every attempt from a usable web console.
 
-TaskHarbor is an evolving full-stack engineering project. Version 0.1.10 provides a working execution engine and UI; the roadmap grows it toward a multi-user, PostgreSQL-backed service.
+TaskHarbor is an evolving full-stack engineering project. Version 0.1.11 provides a working execution engine and UI; the roadmap grows it toward a multi-user, PostgreSQL-backed service.
 
 ![Workflow console](docs/images/operations-console.jpg)
 
@@ -158,3 +158,11 @@ Run state and jobs continue polling separately, with event history omitted from 
 ![Filtered retry event trail](docs/images/event-filters.jpg)
 
 ![Server-paginated event history](docs/images/event-pagination.jpg)
+
+## Reuse a historical definition
+
+Open a workflow, expand a version under **Version history**, then choose **Copy version … to new workflow**. Review the populated draft, rename it or adjust its steps, and choose **Create workflow**. Cancel discards the draft without writing data.
+
+The copy starts with a fresh identity at version 1 and does not start a run. Only the selected definition is reused: source revisions, jobs, inputs and outputs stay with the source. The suggested name includes the source version and respects the 80-character limit. This reuses the normal creation API and DAG validation; it does not restore or overwrite the original workflow.
+
+![Historical workflow copy](docs/images/workflow-copy.jpg)
