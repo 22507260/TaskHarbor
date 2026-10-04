@@ -4,7 +4,7 @@
 
 A local-first workflow operations platform: compose dependency graphs, run background jobs and inspect every attempt from a usable web console.
 
-TaskHarbor is an evolving full-stack engineering project. Version 0.2.0 provides a working execution engine and UI; the roadmap grows it toward a multi-user, PostgreSQL-backed service.
+TaskHarbor is an evolving full-stack engineering project. Version 0.2.1 provides a working execution engine and UI; the roadmap grows it toward a multi-user, PostgreSQL-backed service.
 
 ![Visual workflow studio](docs/images/workflow-studio.jpg)
 
@@ -184,6 +184,10 @@ Drafts save in this browser after 500 ms and flush when the editor closes. Reope
 An older edit draft keeps its original expected version. If the source changed, choose **Save draft as new workflow** or **Discard draft and reload latest**. Nothing is merged silently. New-workflow, edit and source-version copy drafts use separate keys; only one new-workflow draft is kept per browser origin.
 
 Canvas layouts are stored locally per saved workflow. Moving nodes alone does not create a new definition revision. Other browsers and portable imports use automatic layout; layouts are not included in portable JSON v1. Browser storage is not encrypted and clearing site data removes drafts/layouts. The application remains a trusted local-user tool.
+
+**Duplicate selected step** in the settings header copies settings and incoming dependencies to a fresh task. Edit the copy independently; undo/redo covers the operation. Existing downstream tasks keep their original dependencies. Duplication is disabled at the 20-step limit.
+
+![Independent copied task with preserved dependency](docs/images/studio-duplication.jpg)
 
 On narrow screens, **Tasks & steps** and **Step settings** switch the side panels. The step list, dependency selector and order buttons provide a full alternative to dragging.
 

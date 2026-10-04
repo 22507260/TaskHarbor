@@ -175,7 +175,7 @@ function App() {
           <span className="brand-icon">
             <Anchor size={23} />
           </span>
-          TaskHarbor<span className="version">v0.2.0</span>
+          TaskHarbor<span className="version">v0.2.1</span>
         </a>
         <div className="workspace">
           <span className="avatar">P</span>

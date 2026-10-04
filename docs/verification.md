@@ -137,3 +137,10 @@ The checked-in CI workflow targets Windows and Linux. Its remote execution statu
 ![Actual worker result](images/studio-execution.jpg)
 
 - Initial Linux E2E CI exposed a pointer-coordinate race after fit-view. Handle gestures now use locator stability checks and await font readiness instead of precomputed screen coordinates; the pointer gesture and graph assertions remain intact.
+
+## v0.2.1 task duplication verification
+
+- 69 unit/API/process tests, TypeScript check and production build passed on Windows with Node 24.
+- 12 Chromium scenarios cover the existing studio and independent duplicate settings, copied dependencies, undo/redo and persistence.
+- Unit tests cover incomplete raw JSON, dependency order, outgoing-edge isolation, deep config isolation, fresh IDs, name bounds and the 20-step limit.
+- Desktop browser check: duplicate a quality task, change the copy from EU to US, and auto-layout the two branches. Screenshot: `docs/images/studio-duplication.jpg`.

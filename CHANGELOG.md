@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.1
+
+- Duplicate selected studio tasks with independent settings, ordered incoming dependencies and a fresh ID.
+- Preserve unfinished JSON when duplicating; copied steps participate in draft recovery and undo/redo.
+- Respect the 20-step limit and keep existing downstream connections attached to their original task.
+
 ## 0.2.0
 
 - Replace the form builder with a visual React Flow studio shared by creation, editing and historical copies.
