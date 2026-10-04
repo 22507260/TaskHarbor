@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {
   initialize,
   addStep,
+  duplicateStep,
   connect,
   disconnect,
   removeStep,
@@ -154,4 +155,39 @@ test('camera changes remain outside undo and redo history', () => {
   h = { ...h, present: { ...h.present, viewport: { x: 20, y: 40, zoom: 2 } } };
   assert.deepEqual(undo(h).present.viewport, h.present.viewport);
   assert.deepEqual(redo(undo(h)).present.viewport, h.present.viewport);
+});
+
+test('duplication preserves ordered inputs and raw JSON without cloning outgoing edges or sharing config', () => {
+  let state = connect(connect(three(), 'step_2', 'step_1'), 'step_3', 'step_1');
+  state = addStep(state, 'delay');
+  state = connect(state, 'step_1', 'step_4');
+  state.definition.steps[0].config.fields = { nested: { value: 1 } };
+  state.raw.step_1 = '{unfinished';
+  const before = structuredClone(state);
+  const copy = duplicateStep(state, 'step_1');
+  const step = copy.definition.steps.at(-1);
+  assert.equal(step.id, 'step_5');
+  assert.deepEqual(step.dependsOn, ['step_2', 'step_3']);
+  assert.deepEqual(copy.definition.steps[3].dependsOn, ['step_1']);
+  assert.equal(copy.raw.step_5, '{unfinished');
+  assert.deepEqual(copy.positions.step_5, {
+    x: state.positions.step_1.x + 40,
+    y: state.positions.step_1.y + 40,
+  });
+  step.config.fields.nested.value = 2;
+  step.dependsOn.reverse();
+  assert.deepEqual(state, before);
+});
+test('duplication is one reversible edit, uses available IDs and enforces limits', () => {
+  let state = removeStep(three(), 'step_2');
+  state.definition.steps[0].name = 'x'.repeat(80);
+  const next = duplicateStep(state, 'step_1');
+  assert.equal(next.definition.steps.at(-1).id, 'step_2');
+  assert.equal(next.definition.steps.at(-1).name.length, 80);
+  const history = commit(timeline(state), next);
+  assert.deepEqual(undo(history).present, state);
+  assert.deepEqual(redo(undo(history)).present, next);
+  assert.throws(() => duplicateStep(state, 'missing'), /existing/);
+  while (state.definition.steps.length < 20) state = addStep(state, 'delay');
+  assert.throws(() => duplicateStep(state, 'step_1'), /20/);
 });

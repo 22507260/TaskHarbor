@@ -77,6 +77,21 @@ export function addStep(state: StudioState, type: Step['type'], position?: Posit
     },
   };
 }
+export function duplicateStep(state: StudioState, sourceId: string): StudioState {
+  const source = state.definition.steps.find((step) => step.id === sourceId);
+  if (!source) throw new Error('Select an existing step to duplicate.');
+  const origin = state.positions[sourceId] ?? { x: 0, y: 0 };
+  const next = addStep(state, source.type, { x: origin.x + 40, y: origin.y + 40 });
+  const id = next.definition.steps.at(-1)!.id;
+  const copy = { ...structuredClone(source), id, name: source.name.slice(0, 73) + ' (copy)' };
+  return {
+    ...next,
+    definition: { ...next.definition, steps: [...state.definition.steps, copy] },
+    raw: Object.hasOwn(state.raw, sourceId)
+      ? { ...state.raw, [id]: state.raw[sourceId] }
+      : { ...state.raw },
+  };
+}
 export function removeStep(state: StudioState, id: string): StudioState {
   const positions = { ...state.positions },
     raw = { ...state.raw };

@@ -319,3 +319,36 @@ test('palette drag, keyboard movement and deletion are accessible and reversible
   await page.getByRole('button', { name: 'Close dialog', exact: true }).press('Shift+Tab');
   await expect(page.getByRole('dialog')).toBeVisible();
 });
+
+test('duplicating a selected task copies inputs and allows independent edits, undo and redo', async ({
+  page,
+  request,
+}) => {
+  await open(page);
+  await page.getByRole('textbox', { name: 'Workflow name' }).fill('Duplicate demo');
+  await add(page, 'JSON transform', 'Source');
+  await add(page, 'JSON transform', 'Reusable');
+  await page.getByLabel('Add dependency', { exact: true }).selectOption('step_1');
+  const fields = page.getByRole('textbox', { name: 'Fields to merge (JSON object)' });
+  await fields.fill('{"value":1}');
+  await fields.blur();
+  await page.getByRole('button', { name: 'Duplicate selected step' }).click();
+  await expect(page.getByRole('textbox', { name: 'Step label', exact: true })).toHaveValue(
+    'Reusable (copy)',
+  );
+  await expect(fields).toHaveValue('{"value":1}');
+  await expect(page.locator('.react-flow__node')).toHaveCount(3);
+  await page.getByRole('button', { name: 'Undo edit', exact: true }).click();
+  await expect(page.locator('.react-flow__node')).toHaveCount(2);
+  await page.getByRole('button', { name: 'Redo edit', exact: true }).click();
+  await expect(page.locator('.react-flow__node')).toHaveCount(3);
+  await fields.fill('{"value":2}');
+  await fields.blur();
+  await page.getByRole('button', { name: 'Create workflow', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Duplicate demo', exact: true })).toBeVisible();
+  const workflows = await (await request.get('/api/workflows')).json();
+  const workflow = workflows.find((w: { name: string }) => w.name === 'Duplicate demo');
+  expect(workflow.steps[1].config.fields).toEqual({ value: 1 });
+  expect(workflow.steps[2].config.fields).toEqual({ value: 2 });
+  expect(workflow.steps[2].dependsOn).toEqual(['step_1']);
+});

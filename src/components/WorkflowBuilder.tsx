@@ -12,7 +12,7 @@ import {
   type Viewport,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { Plus, Undo2, Redo2, LayoutGrid, Trash2, GitBranch, Layers3 } from 'lucide-react';
+import { Plus, Undo2, Redo2, LayoutGrid, Trash2, Copy, GitBranch, Layers3 } from 'lucide-react';
 import { api, ApiError } from '../api';
 import type { Workflow, Step } from '../types';
 import {
@@ -22,6 +22,7 @@ import {
   undo,
   redo,
   addStep,
+  duplicateStep,
   removeStep,
   connect,
   disconnect,
@@ -612,6 +613,21 @@ function Studio({ close, created, initial, copy }: Props) {
                 <>
                   <div className="studio-settings-title">
                     <h3>Step settings</h3>
+                    <button
+                      className="icon-button"
+                      aria-label="Duplicate selected step"
+                      title="Duplicate settings and incoming dependencies"
+                      disabled={state.definition.steps.length >= 20}
+                      onClick={() => {
+                        change((s) => {
+                          const next = duplicateStep(s, step.id);
+                          setSelected(next.definition.steps.at(-1)!.id);
+                          return next;
+                        });
+                      }}
+                    >
+                      <Copy size={16} />
+                    </button>
                     <button
                       className="icon-button"
                       aria-label="Delete selected step"
