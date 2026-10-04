@@ -7,26 +7,31 @@ export default function Builder({
   close,
   created,
   initial,
+  copy,
 }: {
   close: () => void;
   created: () => Promise<void>;
   initial: Workflow | null;
+  copy?: { definition: Omit<Workflow, 'id' | 'version'>; version: number } | null;
 }) {
   const [original, setOriginal] = useState(initial);
   const [conflict, setConflict] = useState(false);
-  const [name, setName] = useState(initial?.name ?? ''),
-    [description, setDescription] = useState(initial?.description ?? ''),
+  const [name, setName] = useState(initial?.name ?? copy?.definition.name ?? ''),
+    [description, setDescription] = useState(
+      initial?.description ?? copy?.definition.description ?? '',
+    ),
     [steps, setSteps] = useState<Step[]>(
-      initial?.steps ?? [
-        {
-          id: 'step_1',
-          name: 'Prepare data',
-          type: 'transform',
-          dependsOn: [],
-          config: { fields: { prepared: true } },
-          maxAttempts: 3,
-        },
-      ],
+      initial?.steps ??
+        copy?.definition.steps ?? [
+          {
+            id: 'step_1',
+            name: 'Prepare data',
+            type: 'transform',
+            dependsOn: [],
+            config: { fields: { prepared: true } },
+            maxAttempts: 3,
+          },
+        ],
     );
   const [error, setError] = useState(''),
     [busy, setBusy] = useState(false),
@@ -69,7 +74,9 @@ export default function Builder({
       <div className="builder-intro">
         {original
           ? `Editing version ${original.version}. Changes create a new version; existing runs keep their snapshots.`
-          : 'Compose a dependency graph from safe, built-in tasks.'}
+          : copy
+            ? `Copying version ${copy.version} into a new workflow. Review and rename the draft before creating it. The source remains unchanged.`
+            : 'Compose a dependency graph from safe, built-in tasks.'}
       </div>
       <label className="field">
         Name

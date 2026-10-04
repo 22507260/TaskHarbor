@@ -1,4 +1,6 @@
 import { api } from './api';
+import { workflowCopy } from './workflowCopy';
+import type { Revision } from './types';
 import type { Workflow, Run, Worker, Step, RunSummary, HistoryPage, Overview } from './types';
 import Dialog from './components/Dialog';
 import RevisionHistory from './components/RevisionHistory';
@@ -89,6 +91,10 @@ function App() {
     [selected, setSelected] = useState<Workflow | null>(null),
     [run, setRun] = useState<Run | null>(null),
     [rerunSource, setRerunSource] = useState<Run | null>(null);
+  const [copyDraft, setCopyDraft] = useState<{
+    definition: Revision['definition'];
+    version: number;
+  } | null>(null);
   const [error, setError] = useState(''),
     [connected, setConnected] = useState(false),
     [modal, setModal] = useState(false),
@@ -168,7 +174,7 @@ function App() {
           <span className="brand-icon">
             <Anchor size={23} />
           </span>
-          TaskHarbor<span className="version">v0.1.10</span>
+          TaskHarbor<span className="version">v0.1.11</span>
         </a>
         <div className="workspace">
           <span className="avatar">P</span>
@@ -250,6 +256,7 @@ function App() {
                   onClick={() => {
                     setError('');
                     setEditing(null);
+                    setCopyDraft(null);
                     setModal(true);
                   }}
                 >
@@ -522,6 +529,7 @@ function App() {
               try {
                 const latest = await api<Workflow>('/workflows/' + selected.id);
                 setEditing(latest);
+                setCopyDraft(null);
                 setSelected(null);
                 setModal(true);
               } catch (e) {
@@ -531,7 +539,15 @@ function App() {
           >
             <Pencil size={15} /> Edit latest version
           </button>
-          <RevisionHistory workflowId={selected.id} />
+          <RevisionHistory
+            workflowId={selected.id}
+            copy={(revision) => {
+              setCopyDraft({ definition: workflowCopy(revision), version: revision.version });
+              setEditing(null);
+              setSelected(null);
+              setModal(true);
+            }}
+          />
           <button
             className="secondary"
             disabled={exporting}
@@ -569,6 +585,7 @@ function App() {
       )}
       {modal && (
         <Builder
+          copy={copyDraft}
           initial={editing}
           close={() => setModal(false)}
           created={async () => {

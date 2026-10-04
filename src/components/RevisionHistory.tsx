@@ -1,9 +1,15 @@
 import { useEffect, useState } from 'react';
-import { History } from 'lucide-react';
+import { History, Copy } from 'lucide-react';
 import { api } from '../api';
 import type { Revision } from '../types';
 import RevisionComparison from './RevisionComparison';
-export default function RevisionHistory({ workflowId }: { workflowId: string }) {
+export default function RevisionHistory({
+  workflowId,
+  copy,
+}: {
+  workflowId: string;
+  copy: (revision: Revision) => void;
+}) {
   const [revisions, setRevisions] = useState<Revision[]>([]),
     [error, setError] = useState('');
   useEffect(() => {
@@ -41,6 +47,9 @@ export default function RevisionHistory({ workflowId }: { workflowId: string }) 
             Version {revision.version} · {revision.definition.name} ·{' '}
             {new Date(revision.created_at).toLocaleString()}
           </summary>
+          <button className="secondary small" onClick={() => copy(revision)}>
+            <Copy size={14} /> Copy version {revision.version} to new workflow
+          </button>
           <p className="revision-description">{revision.definition.description}</p>
           <pre>{JSON.stringify(revision.definition, null, 2)}</pre>
         </details>
