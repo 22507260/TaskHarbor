@@ -1,5 +1,7 @@
 # TaskHarbor
 
+[![Quality checks](https://github.com/22507260/TaskHarbor/actions/workflows/ci.yml/badge.svg)](https://github.com/22507260/TaskHarbor/actions/workflows/ci.yml)
+
 A local-first workflow operations platform: compose dependency graphs, run background jobs and inspect every attempt from a usable web console.
 
 TaskHarbor is an evolving full-stack engineering project. Version 0.2.0 provides a working execution engine and UI; the roadmap grows it toward a multi-user, PostgreSQL-backed service.
@@ -196,3 +198,5 @@ npm run test:e2e
 ```
 
 This builds the production client and starts an isolated API and actual worker on port 4321 with a new database in the OS temporary directory. It never uses the workspace database. Temporary test databases are retained for diagnosis and can be removed by normal OS temp cleanup. Chromium tests cover authoring, graph gestures, drafts, conflicts, storage errors, version preservation and mobile/keyboard use. CI runs these separately on Linux and retains failure traces for seven days.
+
+The v0.2 implementation at `42e1a33` passed Windows/Linux quality checks and all 11 Chromium scenarios in [the verified CI run](https://github.com/22507260/TaskHarbor/actions/runs/37194497896). The badge above tracks subsequent commits.
