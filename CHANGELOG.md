@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.10
+
+- Navigate backward through execution-event pages while retaining the insertion boundary.
+- Keep a revisited first page paused until explicit refresh, avoiding shifts caused by new events.
+- Accept validated event snapshot boundaries and test first-page revisits in both sort directions.
+
 ## 0.1.9
 
 - Move event search and filters into SQLite with bounded cursor pagination.

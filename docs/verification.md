@@ -106,3 +106,10 @@ The checked-in CI workflow targets Windows and Linux. Its remote execution statu
 
 ![Anchored event page](images/event-pagination.jpg)
 ![Mobile event pagination](images/event-pagination-mobile.jpg)
+
+## v0.1.10 event navigation verification
+
+- Fifty-four tests and the production build passed. The new test verifies first-page revisits against appended events in both sort directions, plus zero/invalid boundaries.
+- Browser: traversed the existing 82-event fixture from page 1 to page 2 and back to the anchored first page. Previous was disabled at the first page; Refresh latest restored its live mode.
+
+![Previous event page](images/event-navigation.jpg)

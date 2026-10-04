@@ -140,3 +140,5 @@ Runs and history summaries expose nullable `parent_run_id`. New jobs start at at
 Example: `/runs/:id/events?category=retries&order=newest&limit=50`. Continue with the returned cursor and the same filters. Page size may change between pages.
 
 `GET /runs/:id?events=omit` returns normal run detail with an empty `events` array, allowing independent job/detail polling. Omitted `events` or `events=include` preserves the full legacy response. Other values return 400. The legacy `/runs` list remains unchanged.
+
+For event history, optional `snapshot` is a nonnegative safe integer insertion boundary from a previous response. It allows revisiting the first page without including later events. A cursor takes precedence over a supplied snapshot. Omit both for live records; invalid snapshot values return 400.

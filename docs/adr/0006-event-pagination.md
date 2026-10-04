@@ -16,4 +16,4 @@ The console polls the first page every 1.5 seconds using sequential requests, bu
 
 ## Consequences
 
-Event response size and rendered rows are bounded independently of total history. Counts and substring filtering still scan matching run records; this does not establish unbounded-scale performance. The insertion boundary freezes event membership, not current job state. There are no arbitrary page jumps or previous-page controls in this increment; refresh starts a new traversal.
+Event response size and rendered rows are bounded independently of total history. Counts and substring filtering still scan matching run records; this does not establish unbounded-scale performance. The insertion boundary freezes event membership, not current job state. The console retains continuation cursors for previous-page navigation. Returning to the first page supplies the same snapshot boundary and stays paused; refresh starts a live traversal. Arbitrary page jumps remain unsupported.
