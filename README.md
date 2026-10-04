@@ -2,9 +2,9 @@
 
 A local-first workflow operations platform: compose dependency graphs, run background jobs and inspect every attempt from a usable web console.
 
-TaskHarbor is an evolving full-stack engineering project. Version 0.1.11 provides a working execution engine and UI; the roadmap grows it toward a multi-user, PostgreSQL-backed service.
+TaskHarbor is an evolving full-stack engineering project. Version 0.2.0 provides a working execution engine and UI; the roadmap grows it toward a multi-user, PostgreSQL-backed service.
 
-![Workflow console](docs/images/operations-console.jpg)
+![Visual workflow studio](docs/images/workflow-studio.jpg)
 
 ## Run locally
 
@@ -18,7 +18,7 @@ npm run dev
 Open [localhost:5173](http://127.0.0.1:5173). This starts the API, one worker and Vite. Three sample workflows are seeded only when the database has no workflows.
 
 1. Run **Resilient delivery** to see two controlled failures, backoff and a successful third attempt.
-2. Create a workflow with the form. Add steps and choose their dependencies.
+2. Open **New workflow**. Add tasks from the palette, connect their handles or use the dependency selector, then save.
 3. Open a run to inspect step state, worker ownership, attempts, events and JSON outputs.
 4. Start `npm run worker` in a second terminal to execute independent branches concurrently. Run **Parallel quality gates** to observe that behavior.
 5. Cancel an active run to invalidate its outstanding job leases.
@@ -27,7 +27,7 @@ For a built client, run `npm run build`, then `npm start` and `npm run worker` i
 
 ## What works today
 
-- React + TypeScript console with responsive layouts, workflow creation/editing, version history, real dependency previews, execution history and a run inspector.
+- React + TypeScript console with a visual workflow studio, local draft recovery, undo/redo, responsive layouts, version history, dependency previews, execution history and a run inspector.
 - Fastify API with Zod validation for unique step IDs, acyclic dependencies, missing dependencies and bounded task settings.
 - SQLite persistence with WAL and transactional job claims across worker processes on the same machine.
 - Five-second leases, one-second renewal, recovery after worker failure and fencing of stale results.
@@ -166,3 +166,33 @@ Open a workflow, expand a version under **Version history**, then choose **Copy 
 The copy starts with a fresh identity at version 1 and does not start a run. Only the selected definition is reused: source revisions, jobs, inputs and outputs stay with the source. The suggested name includes the source version and respects the 80-character limit. This reuses the normal creation API and DAG validation; it does not restore or overwrite the original workflow.
 
 ![Historical workflow copy](docs/images/workflow-copy.jpg)
+
+## Visual workflow studio (v0.2)
+
+**New workflow**, **Edit latest version** and **Copy version … to new workflow** open the same studio. Click a task in the palette or drag it onto the canvas. Select a step to configure its label, task settings, primitive JSON fields and attempt limit. IDs remain stable and read-only. Workflows contain up to 20 steps.
+
+Connect a source's right handle to a target's left handle, or select **Add dependency** in the settings panel. Self-connections, duplicate dependencies and cycles are rejected. Disconnect or delete selected elements with their controls; deleting a step removes its connections. The final step can be deleted, but an empty graph cannot be saved. Dependency arrow buttons change merge precedence: later dependencies win when keys overlap.
+
+**Undo / Redo** retain the latest 100 operations. Text edits are grouped when a field loses focus; a completed drag is one operation. Outside text fields, Ctrl/Cmd+Z undoes and Ctrl/Cmd+Shift+Z redoes. Focus canvas nodes for arrow-key movement and Delete/Backspace removal. Escape clears the selected step, then closes the studio. Camera changes do not enter edit history. **Auto layout** arranges the DAG; canvas controls zoom and fit it to the available space.
+
+### Local drafts and conflicts
+
+Drafts save in this browser after 500 ms and flush when the editor closes. Reopening offers **Continue draft** or **Discard draft**. Drafts include incomplete JSON text, positions, camera and the original version; they do not save workflow revisions automatically. A successful save removes the draft. Failed saves preserve it. Storage failures show a message while editing remains usable.
+
+An older edit draft keeps its original expected version. If the source changed, choose **Save draft as new workflow** or **Discard draft and reload latest**. Nothing is merged silently. New-workflow, edit and source-version copy drafts use separate keys; only one new-workflow draft is kept per browser origin.
+
+Canvas layouts are stored locally per saved workflow. Moving nodes alone does not create a new definition revision. Other browsers and portable imports use automatic layout; layouts are not included in portable JSON v1. Browser storage is not encrypted and clearing site data removes drafts/layouts. The application remains a trusted local-user tool.
+
+On narrow screens, **Tasks & steps** and **Step settings** switch the side panels. The step list, dependency selector and order buttons provide a full alternative to dragging.
+
+![Mobile studio](docs/images/workflow-studio-mobile.jpg)
+![Studio workflow executed by the worker](docs/images/studio-execution.jpg)
+
+### Browser regression tests
+
+```sh
+npx playwright install chromium
+npm run test:e2e
+```
+
+This builds the production client and starts an isolated API and actual worker on port 4321 with a new database in the OS temporary directory. It never uses the workspace database. Temporary test databases are retained for diagnosis and can be removed by normal OS temp cleanup. Chromium tests cover authoring, graph gestures, drafts, conflicts, storage errors, version preservation and mobile/keyboard use. CI runs these separately on Linux and retains failure traces for seven days.

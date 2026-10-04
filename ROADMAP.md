@@ -8,11 +8,11 @@ Delivered: workflow creation, DAG validation, durable jobs, leased workers, retr
 
 ## v0.2 â€” Everyday workflow authoring
 
-- Delivered in v0.1.1: extracted client API/types, dialog, builder and revision history. Delivered in v0.1.3: extracted run inspector. Next: share validated contracts with the backend.
+- Delivered in v0.1.1: extracted client API/types, dialog, builder and revision history. Delivered in v0.1.3: extracted run inspector. Delivered in v0.2.0: client and server reuse the workflow validation schema.
 - Delivered in v0.1.1: edit and version workflows without changing historical runs, with conflict detection and revision inspection. Delivered in v0.1.7: field-level comparison of any two revisions. Delivered in v0.1.11: create a reviewed copy from a historical definition.
-- Delivered in v0.1.5: versioned workflow import/export with validation and preview. Delivered in v0.1.6: live execution graphs with selected-step output and event inspection. Next: visual graph authoring.
+- Delivered in v0.1.5: versioned workflow import/export with validation and preview. Delivered in v0.1.6: live execution graphs with selected-step output and event inspection. Delivered in v0.2.0: visual graph authoring, undo/redo, local draft recovery and mobile form alternatives.
 - Delivered in v0.1.2: run search, status/workflow filters, anchored pagination and global dashboard metrics. Delivered in v0.1.3: rerun with edited input and source/latest definition selection. Delivered in v0.1.8: event search/group filters. Delivered in v0.1.9: server-side event search and anchored cursor pagination with separate detail polling.
-- Browser automation in CI; keyboard and screen-reader review of the full console.
+- Delivered in v0.2.0: isolated Chromium E2E tests in CI and studio keyboard/mobile checks. Next: screen-reader review of the full console.
 - Deliverable: create, revise and troubleshoot an onboarding workflow entirely from the UI.
 
 ## v0.3 â€” PostgreSQL and operational confidence

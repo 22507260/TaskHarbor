@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.2.0
+
+- Replace the form builder with a visual React Flow studio shared by creation, editing and historical copies.
+- Add task drag/click creation, controlled DAG connections, step settings, dependency ordering, auto layout and camera controls.
+- Reject invalid connections and share the server's workflow validation with the client.
+- Add 100-operation undo/redo, grouped field edits, reversible node drags and keyboard alternatives.
+- Persist origin-local drafts and canvas layouts; recover incomplete JSON and preserve stale edit versions.
+- Offer explicit new-copy/reload choices for conflicts and surface storage/write failures.
+- Add responsive task/settings panels and extend dialog focus handling to canvas elements.
+- Lazy-load the studio and keep existing API, database schema and portable document format compatible.
+- Add eleven model tests and eleven Chromium E2E scenarios with an isolated database and real worker; add Linux E2E CI with failure traces.
+
 ## 0.1.11
 
 - Open an editable new-workflow draft from any recorded revision.

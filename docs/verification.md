@@ -122,3 +122,16 @@ The checked-in CI workflow targets Windows and Linux. Its remote execution statu
 - The development server briefly cached an empty module during filesystem writes; restarting the development processes restored it. The production build passed independently.
 
 ![Historical version draft](images/workflow-copy.jpg)
+
+## v0.2.0 visual studio verification
+
+- Sixty-seven unit/API/process tests passed, retaining all previous fifty-six. New cases cover graph direction and rejection, cleanup, merge order, ID/count bounds, grouped history, shared validation, draft recovery/corruption/storage denial, key separation and camera-independent undo.
+- Eleven production Chromium E2E tests passed against a fresh temporary database and actual worker: branching execution/output, invalid graph/JSON, undo/redo, reload recovery and cleanup, historical copies, live and recovered version conflicts, 390px forms, handle connections, grouped drag undo, storage denial, failed writes, layout-only version preservation, palette drag and keyboard movement/deletion.
+- Local browser: authored Studio onboarding demo with four transform tasks and four connections, recovered it across reload, checked desktop and 390px views, saved at v1 and launched it explicitly. The worker completed all steps; Join branches output contained prepared, customerReady, checked and joined flags alongside the input. Synthetic demonstration data only.
+- The new-workflow count increased from 8 to 9 without running until explicitly requested; execution count increased from 15 to 16 after launch. Viewport override was reset.
+- A controlled-canvas measurement issue was found during visual QA and corrected; handle tests wait for finalized node placement before pointer input. The final full suite passed after these fixes.
+- TypeScript/Vite build, formatting and high-severity audit checks passed; npm reported zero vulnerabilities. Full assistive-technology review is not claimed.
+
+![Visual workflow studio](images/workflow-studio.jpg)
+![Mobile workflow studio](images/workflow-studio-mobile.jpg)
+![Actual worker result](images/studio-execution.jpg)
