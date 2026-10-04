@@ -282,6 +282,7 @@ export class Store {
       if (!this.db.prepare('SELECT id FROM runs WHERE id=?').get(runId)) return null;
       const snapshot =
         cursor?.snapshot ??
+        filters.snapshot ??
         this.db.prepare('SELECT COALESCE(MAX(id),0) AS id FROM events WHERE run_id=?').get(runId)
           .id;
       const clauses = ['run_id=?', 'id<=?'],

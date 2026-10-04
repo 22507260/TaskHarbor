@@ -5,6 +5,7 @@ export const eventQuery = z.object({
   category: z.enum(['all', 'errors', 'retries', 'recovery']).default('all'),
   step: z.string().min(1).max(40).optional(),
   order: z.enum(['oldest', 'newest']).default('oldest'),
+  snapshot: z.coerce.number().int().nonnegative().safe().optional(),
   cursor: z.string().max(2048).optional(),
 });
 const fingerprint = (runId, query) =>

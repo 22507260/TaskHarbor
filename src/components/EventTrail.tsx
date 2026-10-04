@@ -20,7 +20,8 @@ export default function EventTrail({
     [category, setCategory] = useState<EventCategory>('all'),
     [newest, setNewest] = useState(false),
     [cursor, setCursor] = useState<string | null>(null),
-    [pageNumber, setPageNumber] = useState(1),
+    [history, setHistory] = useState<(string | null)[]>([]),
+    [snapshot, setSnapshot] = useState<number | null>(null),
     [refresh, setRefresh] = useState(0);
   type Page = {
     items: Run['events'];
@@ -34,7 +35,8 @@ export default function EventTrail({
     [error, setError] = useState('');
   function reset() {
     setCursor(null);
-    setPageNumber(1);
+    setHistory([]);
+    setSnapshot(null);
     setRefresh((value) => value + 1);
   }
   useEffect(() => {
@@ -56,6 +58,7 @@ export default function EventTrail({
         });
         if (step) params.set('step', step);
         if (cursor) params.set('cursor', cursor);
+        if (snapshot !== null) params.set('snapshot', String(snapshot));
         const result = await api<Page>(
           '/runs/' + runId + '/events?' + params,
           undefined,
@@ -71,7 +74,7 @@ export default function EventTrail({
       } finally {
         if (!controller.signal.aborted) {
           setLoading(false);
-          if (!cursor) timer = setTimeout(fetchPage, 1500);
+          if (snapshot === null) timer = setTimeout(fetchPage, 1500);
         }
       }
     }
@@ -81,7 +84,7 @@ export default function EventTrail({
       clearTimeout(timer);
       clearTimeout(debounce);
     };
-  }, [runId, query, category, newest, step, cursor, refresh]);
+  }, [runId, query, category, newest, step, cursor, snapshot, refresh]);
   const filtered = !!query.trim() || category !== 'all' || !!step;
   return (
     <section className="event-console" aria-label="Execution event trail">
@@ -193,8 +196,8 @@ export default function EventTrail({
       )}
       <div className="event-pagination">
         <span>
-          Page {pageNumber} · {page?.items.length ?? 0} shown
-          {cursor ? ' · anchored history' : ' · live first page'}
+          Page {history.length + 1} · {page?.items.length ?? 0} shown
+          {snapshot !== null ? ' · anchored history' : ' · live first page'}
         </span>
         <div>
           <button className="secondary small" onClick={reset} disabled={loading}>
@@ -202,10 +205,21 @@ export default function EventTrail({
           </button>
           <button
             className="secondary small"
+            disabled={loading || !history.length}
+            onClick={() => {
+              setCursor(history.at(-1)!);
+              setHistory(history.slice(0, -1));
+            }}
+          >
+            Previous events
+          </button>
+          <button
+            className="secondary small"
             disabled={loading || !page?.nextCursor}
             onClick={() => {
+              setHistory([...history, cursor]);
+              setSnapshot(page!.snapshot);
               setCursor(page!.nextCursor);
-              setPageNumber((value) => value + 1);
             }}
           >
             Next 50 events

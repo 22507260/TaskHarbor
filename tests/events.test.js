@@ -115,3 +115,17 @@ test('API bounds event responses and preserves legacy full-detail responses', as
   assert.equal((await app.inject(`/api/runs/${run.id}?events=invalid`)).statusCode, 400);
   assert.equal((await app.inject('/api/runs/missing/events')).statusCode, 404);
 });
+
+test('revisiting the first event page retains its insertion boundary after new arrivals', (t) => {
+  const { store, run } = fixture(t);
+  for (let i = 0; i < 60; i++) store.event(run.id, 'validate', 'job.started', 'Existing');
+  for (const order of ['oldest', 'newest']) {
+    const first = store.eventHistory(run.id, { order });
+    store.event(run.id, 'validate', 'job.retry', 'Later');
+    const previous = store.eventHistory(run.id, { order, snapshot: first.snapshot });
+    assert.deepEqual(previous, first);
+    assert.equal(store.eventHistory(run.id, { order }).total, first.total + 1);
+  }
+  assert.throws(() => store.eventHistory(run.id, { snapshot: -1 }));
+  assert.equal(store.eventHistory(run.id, { snapshot: 0 }).total, 0);
+});
